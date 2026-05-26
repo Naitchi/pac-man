@@ -1,0 +1,22 @@
+[project]
+name = "pac-man"
+version = "1.0.0"
+description = "pac-man"
+requires-python = ">=3.10"
+dependencies = [
+    "flake8",
+    "mypy",
+    "pydantic",
+    "pygame",
+    "mazegenerator",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+mazegenerator = { path = "mazegenerator-2.0.2-py3-none-any.whl" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/"]

@@ -1,0 +1,24 @@
+{
+	"highscores": [
+		{
+			"name": "PLAYER 1",
+			"score": 100000
+		},
+		{
+			"name": "PLAYER 2",
+			"score": 10000
+		},
+		{
+			"name": "PLAYER 3",
+			"score": 1000
+		},
+		{
+			"name": "PLAYER 4",
+			"score": 100
+		},
+		{
+			"name": "PLAYER 5",
+			"score": 10
+		}
+	]
+}

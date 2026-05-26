@@ -1,35 +1,24 @@
-PYTHON_SYS := python3
-VENV := .venv
-PYTHON := $(VENV)/bin/python
-UV := uv
+.PHONY: install run debug clean lint lint-strict
+
+CONFIG ?= config.json
 
 install:
-	uv venv
-	UV_SKIP_WHEEL_FILENAME_CHECK=1 $(UV) pip install -r ./requirements.txt
+	uv sync
 
 run:
-	$(UV) run python pac-man.py
+	uv run python -m src.pac-man $(CONFIG)
 
 debug:
+	uv run python -m pdb -m src.pac-man $(CONFIG)
 
 clean:
-	rm -rf $(VENV) __pycache__ .mypy_cache .pytest_cache .ruff_cache .coverage
-	find . -type d -name '__pycache__' -prune -exec rm -rf {} +
-	find . -type d -name '.mypy_cache' -prune -exec rm -rf {} +
-	find . -type d -name '.pytest_cache' -prune -exec rm -rf {} +
-	find . -type d -name '.ruff_cache' -prune -exec rm -rf {} +
-	find . -type d -name '*.egg-info' -prune -exec rm -rf {} +
-	find . -type f -name '*.pyc' -delete
-	find . -type f -name '*.pyo' -delete
-	find . -type f -name '*.pyd' -delete
-
+	find . -type d -name "__pycache__" -prune -exec rm -rf {} +
+	find . -type d -name ".mypy_cache" -prune -exec rm -rf {} +
 
 lint:
-	$(UV) run --python $(PYTHON) flake8 src 
-	$(UV) run --python $(PYTHON) mypy src --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
+	uv run flake8 src/
+	uv run mypy src/ --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
 
 lint-strict:
-	$(UV) run --python $(PYTHON) flake8 src
-	$(UV) run --python $(PYTHON) mypy src --strict
-
-.PHONY: install run debug clean lint lint-strict
+	uv run flake8 src/
+	uv run mypy src/ --strict
