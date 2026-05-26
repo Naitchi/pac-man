@@ -6,4 +6,5 @@ requires-python = ">=3.10"
 dependencies = [
 	"flake8",
 	"mypy",
+	"mazegenerator @ file:./mazegenerator-00001-py3-none-any.whl"
 ]
