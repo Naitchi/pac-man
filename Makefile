@@ -4,9 +4,11 @@ PYTHON := $(VENV)/bin/python
 UV := uv
 
 install:
-	$(UV) sync
+	uv venv
+	UV_SKIP_WHEEL_FILENAME_CHECK=1 $(UV) pip install -r ./requirements.txt
 
-run: install
+run:
+	$(UV) run python pac-man.py
 
 debug:
 
@@ -16,9 +18,11 @@ clean:
 	find . -type d -name '.mypy_cache' -prune -exec rm -rf {} +
 	find . -type d -name '.pytest_cache' -prune -exec rm -rf {} +
 	find . -type d -name '.ruff_cache' -prune -exec rm -rf {} +
+	find . -type d -name '*.egg-info' -prune -exec rm -rf {} +
 	find . -type f -name '*.pyc' -delete
 	find . -type f -name '*.pyo' -delete
 	find . -type f -name '*.pyd' -delete
+
 
 lint:
 	$(UV) run --python $(PYTHON) flake8 src 
