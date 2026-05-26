@@ -1,5 +1,9 @@
+from display import Display
+
+
 def main():
-    print("test")
+    display = Display()
+    display.run()
 
 
 main()
