@@ -1,0 +1,4 @@
+	flake8
+	mypy
+	pygame
+    ./mazegenerator-00001-py3-none-any.whl
