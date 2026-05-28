@@ -1,4 +1,4 @@
-.PHONY: install run debug clean lint lint-strict
+.PHONY: install run debug build clean lint lint-strict
 
 CONFIG ?= config.json
 
@@ -10,6 +10,9 @@ run:
 
 debug:
 	uv run python -m pdb -m src.pac-man $(CONFIG)
+
+build:
+	uv run --with pyinstaller pyinstaller -n Pac-Man -p . src/pac-man.py
 
 clean:
 	find . -type d -name "__pycache__" -prune -exec rm -rf {} +

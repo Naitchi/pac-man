@@ -28,8 +28,13 @@ def main(filename: str) -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2 or not sys.argv[1].endswith(".json"):
+    file = ""
+    if len(sys.argv) == 1:
+        file = "config.json"
+    elif len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
+        file = sys.argv[1]
+    else:
         print("Usage: make run <config_file.json>")
         sys.exit(1)
 
-    main(sys.argv[1])
+    main(file)
