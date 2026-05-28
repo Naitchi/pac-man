@@ -9,6 +9,7 @@ dependencies = [
     "pydantic",
     "pygame",
     "mazegenerator",
+    "pyinstaller"
 ]
 
 [build-system]

@@ -5,9 +5,6 @@ from src.highscore.parser import parse_highscores
 
 from src.game import Game
 
-# from src.highscore.parser import create_empty_highscores, add_entry
-# from src.highscore.models import Highscore
-
 
 def main(filename: str) -> None:
     try:
@@ -16,25 +13,18 @@ def main(filename: str) -> None:
         print(f"Error parsing config: {e}")
         return
     try:
-        highscores = parse_highscores(cfg.highscore_filename)
+        highscores = parse_highscores(cfg.highscore_filename)  # noqa : F841
     except Exception as e:
         print(f"Error parsing highscores: {e}")
         return
-    # create_empty_highscores("test.json")
-    # add_entry("test.json", Highscore(name="gcs", score=42))
 
     game = Game()
     game.run()
 
 
 if __name__ == "__main__":
-    file = ""
-    if len(sys.argv) == 1:
-        file = "config.json"
-    elif len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
-        file = sys.argv[1]
-    else:
+    if len(sys.argv) != 2 or not sys.argv[1].endswith(".json"):
         print("Usage: make run <config_file.json>")
         sys.exit(1)
 
-    main(file)
+    main(sys.argv[1])
