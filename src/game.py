@@ -1,15 +1,19 @@
 import pygame
-from src.scenes.menu import MainMenuScene
+from src.config.models import GameConfig
+from src.scenes.end_scene import EndScene
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, config: GameConfig):
         pygame.init()
+        self.config = config
         self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         pygame.display.set_caption("Pac-Man")
         self.clock = pygame.time.Clock()
         self.running = True
-        self.scene = MainMenuScene(self)
+
+        # temp pour tester l'écran de fin
+        self.scene = EndScene(self, 4242, True)
 
     def change_scene(self, new_scene):
         if hasattr(self, "scene") and self.scene:
@@ -35,12 +39,3 @@ class Game:
             self.scene.update(dt)
             self.scene.draw(self.screen)
             pygame.display.flip()
-
-
-def main():
-    g = Game()
-    g.run()
-
-
-if __name__ == "__main__":
-    main()

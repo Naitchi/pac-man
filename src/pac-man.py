@@ -18,7 +18,7 @@ def main(filename: str) -> None:
         print(f"Error parsing highscores: {e}")
         return
 
-    game = Game()
+    game = Game(cfg)
     game.run()
 
 

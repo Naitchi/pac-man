@@ -15,7 +15,7 @@ def main() -> None:
         return
 
     try:
-        cfg = parse_config("_internal/json/config.json")  # noqa : F841
+        cfg = parse_config("_internal/json/config.json")
     except Exception as e:
         print(f"Error parsing config: {e}")
         return
@@ -26,7 +26,7 @@ def main() -> None:
         print(f"Error parsing highscores: {e}")
         return
 
-    game = Game()
+    game = Game(cfg)
     game.run()
 
 
