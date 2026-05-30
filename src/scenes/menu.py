@@ -1,5 +1,7 @@
 import pygame
 from .base import Scene
+from ..entities.player import Player
+import random
 
 
 class MainMenuScene(Scene):
@@ -8,6 +10,9 @@ class MainMenuScene(Scene):
         # TODO voir pour mettre une font custom en mode pixelise
         self.title_font = pygame.font.Font(None, 72)
         self.info_font = pygame.font.Font(None, 32)
+        self.player_x = 0
+        self.player_y = random.randint(0, self.game.screen.get_height() - 100)
+        self.player = Player(self.player_x, self.player_y)
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -18,10 +23,18 @@ class MainMenuScene(Scene):
                 self.game.running = False
 
     def update(self, dt):
-        pass
+        self.player_x += 16
+        self.player.rect.x = self.player_x
+        if self.game.screen.get_width() < self.player_x:
+            self.player_x = -100
+            self.player_y = random.randint(
+                0, self.game.screen.get_height() - 100)
+            self.player.rect.y = self.player_y
+        self.player.update()
 
     def draw(self, screen):
         screen.fill((10, 10, 40))
+        self.player.draw(screen)
         title = self.title_font.render("PAC-MAN", True, (255, 200, 0))
         info1 = self.info_font.render(
             "Press Enter to play", True, (255, 255, 255))

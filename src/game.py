@@ -35,12 +35,3 @@ class Game:
             self.scene.update(dt)
             self.scene.draw(self.screen)
             pygame.display.flip()
-
-
-def main():
-    g = Game()
-    g.run()
-
-
-if __name__ == "__main__":
-    main()
