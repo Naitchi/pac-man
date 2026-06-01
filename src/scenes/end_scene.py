@@ -17,7 +17,7 @@ class EndScene(Scene):
         self.info_font = pygame.font.Font(None, 32)
 
         left_ghost_color = "scared" if self.won else "red"
-        right_ghost_color = "scared" if self.won else "blue"
+        right_ghost_color = "white" if self.won else "blue"
         self.left_ghost = Ghost(0, 0, left_ghost_color, 72, "down",
                                 self.game.config.build)
         self.right_ghost = Ghost(0, 0, right_ghost_color, 72, "down",

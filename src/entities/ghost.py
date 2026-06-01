@@ -20,7 +20,7 @@ class Ghost:
     def get_sprite_path(s, frame):
         base_path = "_internal/assets" if s.build else "src/entities/assets"
 
-        modifiers = ["scared"]
+        modifiers = ["scared", "white"]
 
         if s.color in modifiers:
             return (
