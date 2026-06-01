@@ -30,7 +30,7 @@ class MainMenuScene(Scene):
             self.player_y = random.randint(
                 0, self.game.screen.get_height() - 100)
             self.player.rect.y = self.player_y
-        self.player.update()
+        self.player.update(dt)
 
     def draw(self, screen):
         screen.fill((10, 10, 40))

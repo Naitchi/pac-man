@@ -13,7 +13,8 @@ class PlayScene(Scene):
 
     def __init__(s, game):
         super().__init__(game)
-        s.maze = MazeGenerator((20, 20), perfect=False, seed=42).maze  # TODO remplacer les 20 20 et le 42 ? par une valeur dynamique
+        # TODO remplacer les 20 20 et le 42 ? par une valeur dynamique
+        s.maze = MazeGenerator((20, 20), perfect=False, seed=42).maze
         s.wall_color = (0, 140, 220)
         s.floor_color = (0, 0, 0)
         s.pellet_color = (255, 255, 255)
@@ -31,22 +32,24 @@ class PlayScene(Scene):
         )
         s.offset_x = (
             s.game.screen.get_width() - s.cell_size * s.maze_width
-            ) // 2
+        ) // 2
         s.offset_y = s.vertical_margin + (
             (s.available_height - s.cell_size * s.maze_height) // 2
         )
         s.nodes = [
-            (
-                s.offset_x + x * s.cell_size + s.cell_size // 2,
-                s.offset_y + y * s.cell_size + s.cell_size // 2,
-                cell_value,
-            )
+            [
+                (
+                    s.offset_x + x * s.cell_size + s.cell_size // 2,
+                    s.offset_y + y * s.cell_size + s.cell_size // 2,
+                    cell_value,
+                )
+                for x, cell_value in enumerate(row)
+            ]
             for y, row in enumerate(s.maze)
-            for x, cell_value in enumerate(row)
         ]
-        s.spawn_player = s.get_middle_node()
-        print(s.spawn_player)
-        s.player = Player(*s.spawn_player)
+        s.spawn_player_x, s.spawn_player_y = s.get_middle_node()
+        s.player = Player(s.spawn_player_x-((s.cell_size * 0.8)//2), s.spawn_player_y-((s.cell_size * 0.8)//2),
+                          s.cell_size * 0.8)
         s.pellets = {   # TODO faire un deuxieme set pour les power-up pour simplifier l'algo pour lui donner des pouvoirs quand il en mange une ?
             (x, y)
             for y, row in enumerate(s.maze)
@@ -58,9 +61,16 @@ class PlayScene(Scene):
 
     def on_exit(self): pass
 
-    def handle_event(self, event): pass
+    def handle_event(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN:
+                from .play import PlayScene
+                self.game.change_scene(PlayScene(self.game))
+            elif event.key == pygame.K_ESCAPE:
+                self.game.running = False
 
-    def update(self, dt): pass
+    def update(self, dt):
+        self.player.update(dt)
 
     def _has_wall(self, cell_value, wall_bit):
         return (cell_value & wall_bit) != 0
@@ -90,12 +100,12 @@ class PlayScene(Scene):
             return (x_px, y_px)
         else:
             x_px, y_px, value = self.nodes[
-                len(self.nodes)//2][(len(self.nodes[0])//2)+1]
+                len(self.nodes)//2][(len(self.nodes[0])//2)-1]
             if value != 15:
                 return (x_px, y_px)
             else:
                 x_px, y_px, value = self.nodes[
-                    len(self.nodes)//2][(len(self.nodes[0])//2)-1]
+                    len(self.nodes)//2][(len(self.nodes[0])//2)+1]
                 if value != 15:
                     return (x_px, y_px)
                 else:
@@ -128,7 +138,6 @@ class PlayScene(Scene):
                          top + s.cell_size // 2),
                         s._pellet_radius(x, y, s.cell_size),
                     )
-                s.player.draw(screen)
 
                 if s._has_wall(cell_value, s.WALL_TOP):
                     pygame.draw.line(screen, s.wall_color,
@@ -154,3 +163,4 @@ class PlayScene(Scene):
                         (left, top),
                         (left, bottom),
                         wall_thickness)
+        s.player.draw(screen)
