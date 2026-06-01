@@ -8,7 +8,9 @@ class Player:
             pygame.image.load("src/entities/assets/pacman_2.png"),
             # pygame.image.load("src/entities/assets/pacman_3.png"),
             pygame.image.load("src/entities/assets/pacman_4.png"),
-            # pygame.image.load("src/entities/assets/pacman_3.png"),  # ca accelere l'animation je prefere comme ca, go demander a gaspare ce qu'il en pense
+            # pygame.image.load("src/entities/assets/pacman_3.png"),  # ca
+            # accelere l'animation je prefere comme ca, go demander a gaspard
+            # ce qu'il en pense
             pygame.image.load("src/entities/assets/pacman_2.png")
         ]
         s.current_frame = 0

@@ -11,6 +11,8 @@ class LevelConfig(BaseModel):
 class GameConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    build: bool = False
+
     highscore_filename: str = Field(min_length=1)
     levels: list[LevelConfig] = Field(min_length=1)
     lives: int = Field(gt=0)

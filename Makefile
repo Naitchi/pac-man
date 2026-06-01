@@ -12,7 +12,7 @@ debug:
 	uv run python -m pdb -m src.pac-man $(CONFIG)
 
 build:
-	uv run pyinstaller --noconfirm --name Pac-Man --paths . --add-data "config.json:json" --add-data "highscores.json:json" src/build-entry.py
+	uv run pyinstaller --noconfirm --name Pac-Man --paths . --add-data "config.json:json" --add-data "highscores.json:json" --add-data "src/entities/assets:assets" src/build-entry.py
 
 clean:
 	find . -type d -name "__pycache__" -prune -exec rm -rf {} +

@@ -20,6 +20,8 @@ def main() -> None:
         print(f"Error parsing config: {e}")
         return
 
+    cfg.build = True
+
     try:
         highscores = parse_highscores("_internal/json/highscores.json")  # noqa : F841
     except Exception as e:

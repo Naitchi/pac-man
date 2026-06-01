@@ -1,6 +1,7 @@
 import pygame
 from src.config.models import GameConfig
 from src.scenes.menu import MainMenuScene
+from src.scenes.end_scene import EndScene
 
 
 class Game:
@@ -11,7 +12,8 @@ class Game:
         pygame.display.set_caption("Pac-Man")
         self.clock = pygame.time.Clock()
         self.running = True
-        self.scene = MainMenuScene(self)
+        # self.scene = MainMenuScene(self)
+        self.scene = EndScene(self, 12345, True)
 
     def change_scene(self, new_scene):
         if hasattr(self, "scene") and self.scene:

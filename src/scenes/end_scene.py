@@ -3,6 +3,7 @@ import pygame
 from .base import Scene
 from src.highscore.parser import add_entry
 from src.highscore.models import Highscore
+from src.entities.ghost import Ghost
 
 
 class EndScene(Scene):
@@ -14,6 +15,13 @@ class EndScene(Scene):
         self.username = ""
         self.title_font = pygame.font.Font(None, 72)
         self.info_font = pygame.font.Font(None, 32)
+
+        left_ghost_color = "scared" if self.won else "red"
+        right_ghost_color = "scared" if self.won else "blue"
+        self.left_ghost = Ghost(0, 0, left_ghost_color, 72, "down",
+                                self.game.config.build)
+        self.right_ghost = Ghost(0, 0, right_ghost_color, 72, "down",
+                                 self.game.config.build)
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.KEYDOWN:
@@ -29,6 +37,10 @@ class EndScene(Scene):
                     highscore = Highscore(name=self.username, score=self.score)
                     add_entry(self.game.config.highscore_filename, highscore)
                     self.game.running = False
+
+    def update(self, dt: float) -> None:
+        self.left_ghost.update()
+        self.right_ghost.update()
 
     def draw(self, screen: pygame.Surface) -> None:
         screen.fill((10, 10, 40))
@@ -47,7 +59,21 @@ class EndScene(Scene):
         )
 
         center_x = screen.get_width() // 2
-        screen.blit(title, title.get_rect(center=(center_x, 180)))
+        title_rect = title.get_rect(center=(center_x, 180))
+
+        self.left_ghost.rect.center = (
+            title_rect.left - 60,
+            title_rect.centery,
+        )
+        self.right_ghost.rect.center = (
+            title_rect.right + 60,
+            title_rect.centery,
+        )
+
+        self.left_ghost.draw(screen)
+        self.right_ghost.draw(screen)
+
+        screen.blit(title, title_rect)
         screen.blit(score, score.get_rect(center=(center_x, 260)))
         screen.blit(name, name.get_rect(center=(center_x, 340)))
         screen.blit(
