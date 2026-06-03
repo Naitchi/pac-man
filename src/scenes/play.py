@@ -51,6 +51,7 @@ class PlayScene(Scene):
         s.player_direction = None
         s.player_next_direction = None
         s.player_size = int(s.cell_size * 0.8)
+        # TODO Est ce qu'on pourrait pas mettre les zone des carres directement dedans enfaite ?
         s.nodes = [
             [
                 (
