@@ -2,27 +2,25 @@ import pygame
 
 
 class Player:
-    def __init__(s, x, y, size=None):
+    def __init__(s, x, y, build, size=None):
+        s.build = build
+        base_path = "_internal/assets" if s.build else "src/entities/assets"
         s.sprites = [
-            pygame.image.load("src/entities/assets/pacman_1.png"),
-            pygame.image.load("src/entities/assets/pacman_2.png"),
-            # pygame.image.load("src/entities/assets/pacman_3.png"),
-            pygame.image.load("src/entities/assets/pacman_4.png"),
-            # pygame.image.load("src/entities/assets/pacman_3.png"),
-            # ca accelere l'animation je prefere comme ca, go demander a
-            # gaspard ce qu'il en pense
-            pygame.image.load("src/entities/assets/pacman_2.png")
+            pygame.image.load(f"{base_path}/pacman_1.png"),
+            pygame.image.load(f"{base_path}/pacman_2.png"),
+            pygame.image.load(f"{base_path}/pacman_3.png"),
+            pygame.image.load(f"{base_path}/pacman_2.png")
         ]
         if size:
-            size = (size, size)
+            s.size = (size, size)
             s.sprites = [pygame.transform.smoothscale(
-                img, size) for img in s.sprites]
+                img, s.size) for img in s.sprites]
         s.current_frame = 0
         s.animation_fps = 10
         s.animation_timer = 0.0
         s._last_ticks = None
         s.direction = 2
-
+        s.dying = False
         s.image = s._apply_direction(s.sprites[0])
         s.rect = s.image.get_rect(x=x, y=y)
 
@@ -46,6 +44,30 @@ class Player:
         s.direction = direction
         s.image = s._apply_direction(s.sprites[s.current_frame])
 
+    def death(s):
+        s.dying = True
+        base_path = "_internal/assets" if s.build else "src/entities/assets"
+        s.sprites = [
+            pygame.image.load(f"{base_path}/dying/dying_1.png"),
+            pygame.image.load(f"{base_path}/dying/dying_2.png"),
+            pygame.image.load(f"{base_path}/dying/dying_3.png"),
+            pygame.image.load(f"{base_path}/dying/dying_4.png"),
+            pygame.image.load(f"{base_path}/dying/dying_5.png"),
+            pygame.image.load(f"{base_path}/dying/dying_6.png"),
+            pygame.image.load(f"{base_path}/dying/dying_7.png"),
+            pygame.image.load(f"{base_path}/dying/dying_8.png"),
+            pygame.image.load(f"{base_path}/dying/dying_9.png"),
+            pygame.image.load(f"{base_path}/dying/dying_10.png"),
+            pygame.image.load(f"{base_path}/dying/dying_11.png"),
+        ]
+        if s.size:
+            s.sprites = [
+                (pygame.transform.smoothscale(img, s.size)
+                 if img is not None else None)
+                for img in s.sprites
+            ]
+        s.image = s.sprites[0]
+
     def update(s, dt=None):
         if dt is None:
             now = pygame.time.get_ticks()
@@ -59,7 +81,19 @@ class Player:
 
         s.animation_timer += dt
         interval = 1.0 / max(1, s.animation_fps)
-        if s.animation_timer >= interval:
+
+        if s.dying and s.current_frame >= len(s.sprites) - 1:
+            transparent = pygame.Surface(s.size, pygame.SRCALPHA)
+            transparent.fill((0, 0, 0, 0))
+            s.image = transparent
+            return
+
+        if s.animation_timer >= interval and s.dying:
+            steps = int(s.animation_timer // interval)
+            s.animation_timer -= steps * interval
+            s.current_frame = (s.current_frame + steps)
+            s.image = s.sprites[s.current_frame]
+        elif s.animation_timer >= interval:
             steps = int(s.animation_timer // interval)
             s.animation_timer -= steps * interval
             s.current_frame = (s.current_frame + steps) % len(s.sprites)

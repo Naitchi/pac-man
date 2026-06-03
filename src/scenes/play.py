@@ -40,18 +40,19 @@ class PlayScene(Scene):
         # TODO: considérer un second set pour les power-ups
         # (simplifie la gestion des pouvoirs quand on en mange un)
         s.pellets = {
-            (x, y)
+            (s.offset_x + x * s.cell_size + s.cell_size // 2,
+             s.offset_y + y * s.cell_size + s.cell_size // 2)
             for y, row in enumerate(s.maze)
             for x, cell_value in enumerate(row)
             if cell_value != 15
         }
-        print(s.pellets)
 
         # PLAYER
         s.player_direction = None
         s.player_next_direction = None
         s.player_size = int(s.cell_size * 0.8)
         # TODO Est ce qu'on pourrait pas mettre les zone des carres directement dedans enfaite ?
+        # TODO faire avec rect.center en vrai et on check si c'est dans les cases ou non
         s.nodes = [
             [
                 (
@@ -69,10 +70,12 @@ class PlayScene(Scene):
         ]
         # en soit la j'ai ma valeur et je pourrais comparer a ca directe au coordonnes de la prochaine case (selon la direction) pour eviter de surcharger de calcul
         s.player_x, s.player_y = s.get_middle_node()
+        s.disable_pellet(s.player_x, s.player_y)
         s.next_node_x, s.next_node_y = (None, None)
         s.player = Player(
             s.player_x - s.player_size // 2,
             s.player_y - s.player_size // 2,
+            s.game.config.build,
             s.player_size)
 
     def on_enter(s): pass
@@ -131,25 +134,28 @@ class PlayScene(Scene):
                         pac_man_cell_y,
                     )
 
-    def update(s, dt):
-        s.player.update(dt)
-        # TODO tout mettre dans une fonction :
-        if s.player.rect.topleft != (s.next_node_x, s.next_node_y) and s.next_node_x:
-            if s.player_direction == 1:
-                s.player.rect.y -= 1
-            if s.player_direction == 2:
-                s.player.rect.x += 1
-            if s.player_direction == 4:
-                s.player.rect.y += 1
-            if s.player_direction == 8:
-                s.player.rect.x -= 1
+    def step(s):
+        if s.player.dying:
+            return
+        if (s.player.rect.topleft != (s.next_node_x, s.next_node_y)
+                and s.next_node_x is not None and s.next_node_y is not None):
+            step = 5
+            if s.player_direction == 1 and not s.player.dying:
+                s.player.rect.y = max(s.next_node_y, s.player.rect.y - step)
+            elif s.player_direction == 2:
+                s.player.rect.x = min(s.next_node_x, s.player.rect.x + step)
+            elif s.player_direction == 4:
+                s.player.rect.y = min(s.next_node_y, s.player.rect.y + step)
+            elif s.player_direction == 8:
+                s.player.rect.x = max(s.next_node_x, s.player.rect.x - step)
         elif (s.player.rect.topleft == (s.next_node_x, s.next_node_y) or
               (not s.player_direction and s.player_next_direction)):
+            s.disable_pellet(*s.player.rect.center)
             if s.player_next_direction:
                 s.player_direction = s.player_next_direction
                 s.player_next_direction = None
                 s.player.set_direction(s.player_direction)
-            (middle_x_px, middle_y_px, value, pac_man_cell_x,
+            (_, _, value, pac_man_cell_x,
              pac_man_cell_y) = s.get_values_from_node()
             if value & s.player_direction == 0:
                 if s.player_direction == 1:
@@ -163,12 +169,17 @@ class PlayScene(Scene):
                 s.next_node_x = pac_man_cell_x + dx * s.cell_size
                 s.next_node_y = pac_man_cell_y + dy * s.cell_size
 
+    def update(s, dt):
+        s.player.update(dt)
+        s.step()
+
     def _has_wall(s, cell_value, wall_bit):
         return (cell_value & wall_bit) != 0
 
     def disable_pellet(s, x, y):
         s.pellets.discard((x, y))
-        # TODO mettre une verif ici si max(pellets) == 0 alors on relance un playScene mais sans seed ?
+        if not len(s.pellets):
+            s.player.death()
 
     def enable_pellet(s, x, y):
         s.pellets.add((x, y))
@@ -219,14 +230,13 @@ class PlayScene(Scene):
                     s.floor_color,
                     pygame.Rect(left, top, s.cell_size, s.cell_size),
                 )
-
-                if (x, y) in s.pellets:
+                pellet_coords = (left + s.cell_size // 2,
+                                 top + s.cell_size // 2)
+                if pellet_coords in s.pellets:
                     pygame.draw.circle(
                         screen,
                         s.pellet_color,
-                        # TODO quand pac man se deplace il va juste de position en position, si il y a un input on le garde dans une variable (un mouvement max stocker (on pourrait mettre le nombre de bit comme ca on peut juste faire le bitshifting avec la valeur et pas besoin de passer par un intermediaire)  donc si il en fait un autre ca overwrite) ensuite regarde si dans la direction de l'input si il y a un mur ou non, jusqu'a ce qu'il y en ai un.
-                        (left + s.cell_size // 2,
-                         top + s.cell_size // 2),
+                        pellet_coords,
                         s._pellet_radius(x, y, s.cell_size),
                     )
 

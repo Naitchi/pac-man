@@ -12,7 +12,10 @@ class MainMenuScene(Scene):
         self.info_font = pygame.font.Font(None, 32)
         self.player_x = 0
         self.player_y = random.randint(0, self.game.screen.get_height() - 100)
-        self.player = Player(self.player_x, self.player_y)
+        self.player = Player(
+            self.player_x,
+            self.player_y,
+            self.game.config.build)
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
