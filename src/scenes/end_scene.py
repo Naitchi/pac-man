@@ -19,11 +19,13 @@ class EndScene(Scene):
         self.title_font = pygame.font.Font(None, 72)
         self.info_font = pygame.font.Font(None, 32)
 
-        left_ghost_color = "end" if self.won else "red"
-        right_ghost_color = "end" if self.won else "blue"
-        self.left_ghost = Ghost(0, 0, left_ghost_color, 72, "down",
+        left_ghost_color = "modifier" if self.won else "red"
+        right_ghost_color = "modifier" if self.won else "blue"
+        left_ghost_direction = "white" if self.won else "down"
+        right_ghost_direction = "scared" if self.won else "down"
+        self.left_ghost = Ghost(0, 0, left_ghost_color, 72, left_ghost_direction,
                                 self.game.config.build)
-        self.right_ghost = Ghost(0, 0, right_ghost_color, 72, "down",
+        self.right_ghost = Ghost(0, 0, right_ghost_color, 72, right_ghost_direction,
                                  self.game.config.build)
 
     def handle_event(self, event: pygame.event.Event) -> None:
