@@ -1,19 +1,19 @@
 import pygame
 from src.config.models import GameConfig
+from src.highscore.models import HighscoreFile
 from src.scenes.menu import MainMenuScene
-from src.scenes.end_scene import EndScene
 
 
 class Game:
-    def __init__(self, config: GameConfig):
+    def __init__(self, config: GameConfig, highscores: HighscoreFile):
         pygame.init()
         self.config = config
+        self.highscores = highscores
         self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         pygame.display.set_caption("Pac-Man")
         self.clock = pygame.time.Clock()
         self.running = True
         self.scene = MainMenuScene(self)
-        # self.scene = EndScene(self, 12345, True)
 
     def change_scene(self, new_scene):
         if hasattr(self, "scene") and self.scene:

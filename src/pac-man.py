@@ -13,12 +13,12 @@ def main(filename: str) -> None:
         print(f"Error parsing config: {e}")
         return
     try:
-        highscores = parse_highscores(cfg.highscore_filename)  # noqa : F841
+        highscores = parse_highscores(cfg.highscore_filename)
     except Exception as e:
         print(f"Error parsing highscores: {e}")
         return
 
-    game = Game(cfg)
+    game = Game(cfg, highscores)
     game.run()
 
 

@@ -1,7 +1,9 @@
 import sys
 import pygame
+from src.entities.ia import PinkGhost, RedGhost
 from src.entities.player import Player
 from .base import Scene
+from .end_scene import EndScene
 from mazegenerator import MazeGenerator
 
 
@@ -51,8 +53,10 @@ class PlayScene(Scene):
         s.player_direction = None
         s.player_next_direction = None
         s.player_size = int(s.cell_size * 0.8)
-        # TODO Est ce qu'on pourrait pas mettre les zone des carres directement dedans enfaite ?
-        # TODO faire avec rect.center en vrai et on check si c'est dans les cases ou non
+        # TODO Est ce qu'on pourrait pas mettre les zone des carres
+        # directement dedans enfaite ?
+        # TODO faire avec rect.center en vrai et on check si c'est dans les
+        # cases ou non
         s.nodes = [
             [
                 (
@@ -68,7 +72,9 @@ class PlayScene(Scene):
             ]
             for y, row in enumerate(s.maze)
         ]
-        # en soit la j'ai ma valeur et je pourrais comparer a ca directe au coordonnes de la prochaine case (selon la direction) pour eviter de surcharger de calcul
+        # en soit la j'ai ma valeur et je pourrais comparer a ca directe au
+        # coordonnes de la prochaine case (selon la direction) pour eviter de
+        # surcharger de calcul
         s.player_x, s.player_y = s.get_middle_node()
         s.disable_pellet(s.player_x, s.player_y)
         s.next_node_x, s.next_node_y = (None, None)
@@ -77,6 +83,32 @@ class PlayScene(Scene):
             s.player_y - s.player_size // 2,
             s.game.config.build,
             s.player_size)
+
+        _, _, _, ghost_x, ghost_y = s.nodes[0][0]
+        _, _, _, pink_x, pink_y = s.nodes[0][s.maze_width - 1]
+        s.ghosts = [
+            RedGhost(
+                ghost_x,
+                ghost_y,
+                s.player_size,
+                "down",
+                s.game.config.build,
+                s.cell_size,
+                0,
+                0),
+            PinkGhost(
+                pink_x,
+                pink_y,
+                s.player_size,
+                "down",
+                s.game.config.build,
+                s.cell_size,
+                s.maze_width - 1,
+                0)]
+
+        s.score = 0
+        s.lives = s.game.config.lives
+        s.hud_font = pygame.font.Font(None, 36)
 
     def on_enter(s): pass
 
@@ -171,7 +203,34 @@ class PlayScene(Scene):
 
     def update(s, dt):
         s.player.update(dt)
+        for ghost in s.ghosts:
+            ghost.update(s)
         s.step()
+        s.check_ghost_collisions()
+
+    def check_ghost_collisions(s):
+        for ghost in s.ghosts:
+            if ghost.rect.colliderect(s.player.rect):
+                s.lives -= 1
+                if s.lives == 0:
+                    s.game.change_scene(EndScene(s.game, s.score, False))
+                    return
+                s.reset_round_positions()
+                return
+
+    def reset_round_positions(s):
+        s.reset_player_position()
+        for ghost in s.ghosts:
+            ghost.reset_position()
+
+    def reset_player_position(s):
+        s.player.rect.topleft = (
+            s.player_x - s.player_size // 2,
+            s.player_y - s.player_size // 2,
+        )
+        s.player_direction = None
+        s.player_next_direction = None
+        s.next_node_x, s.next_node_y = (None, None)
 
     def _has_wall(s, cell_value, wall_bit):
         return (cell_value & wall_bit) != 0
@@ -197,17 +256,17 @@ class PlayScene(Scene):
 
     def get_middle_node(s):
         x_px, y_px, value, _, _ = s.nodes[
-            len(s.nodes)//2][len(s.nodes[0])//2]
+            len(s.nodes) // 2][len(s.nodes[0]) // 2]
         if value != 15:
             return (x_px, y_px)
         else:
             x_px, y_px, value, _, _ = s.nodes[
-                len(s.nodes)//2][(len(s.nodes[0])//2)-1]
+                len(s.nodes) // 2][(len(s.nodes[0]) // 2) - 1]
             if value != 15:
                 return (x_px, y_px)
             else:
                 x_px, y_px, value, _, _ = s.nodes[
-                    len(s.nodes)//2][(len(s.nodes[0])//2)+1]
+                    len(s.nodes) // 2][(len(s.nodes[0]) // 2) + 1]
                 if value != 15:
                     return (x_px, y_px)
                 else:
@@ -264,4 +323,14 @@ class PlayScene(Scene):
                         (left, top),
                         (left, bottom),
                         wall_thickness)
+        for ghost in s.ghosts:
+            ghost.draw(screen)
         s.player.draw(screen)
+        s.draw_hud(screen)
+
+    def draw_hud(s, screen):
+        lives_text = s.hud_font.render(
+            f"Lives: {s.lives}",
+            True,
+            (255, 255, 255))
+        screen.blit(lives_text, (10, s.offset_y))
