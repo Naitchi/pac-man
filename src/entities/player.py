@@ -47,7 +47,7 @@ class Player:
     def death(s):
         s.dying = True
         base_path = "_internal/assets" if s.build else "src/entities/assets"
-        s.sprites = [
+        s.dying_sprites = [
             pygame.image.load(f"{base_path}/dying/dying_1.png"),
             pygame.image.load(f"{base_path}/dying/dying_2.png"),
             pygame.image.load(f"{base_path}/dying/dying_3.png"),
@@ -61,12 +61,12 @@ class Player:
             pygame.image.load(f"{base_path}/dying/dying_11.png"),
         ]
         if s.size:
-            s.sprites = [
+            s.dying_sprites = [
                 (pygame.transform.smoothscale(img, s.size)
                  if img is not None else None)
-                for img in s.sprites
+                for img in s.dying_sprites
             ]
-        s.image = s.sprites[0]
+        s.image = s.dying_sprites[0]
 
     def update(s, dt=None):
         if dt is None:
@@ -82,7 +82,7 @@ class Player:
         s.animation_timer += dt
         interval = 1.0 / max(1, s.animation_fps)
 
-        if s.dying and s.current_frame >= len(s.sprites) - 1:
+        if s.dying and s.current_frame >= len(s.dying_sprites) - 1:
             transparent = pygame.Surface(s.size, pygame.SRCALPHA)
             transparent.fill((0, 0, 0, 0))
             s.image = transparent
@@ -92,7 +92,7 @@ class Player:
             steps = int(s.animation_timer // interval)
             s.animation_timer -= steps * interval
             s.current_frame = (s.current_frame + steps)
-            s.image = s.sprites[s.current_frame]
+            s.image = s.dying_sprites[s.current_frame]
         elif s.animation_timer >= interval:
             steps = int(s.animation_timer // interval)
             s.animation_timer -= steps * interval

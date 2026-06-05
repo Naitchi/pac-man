@@ -2,7 +2,17 @@ from src.entities.ghost import Ghost
 
 
 class RedGhost(Ghost):
-    def __init__(s, x, y, size, direction, build, cell_size, cell_x, cell_y):
+    def __init__(
+            s,
+            x,
+            y,
+            size,
+            direction,
+            build,
+            cell_size,
+            cell_x,
+            cell_y,
+            speed):
         super().__init__(x, y, "red", size, direction, build)
         s.cell_size = cell_size
         s.spawn_x = x
@@ -12,7 +22,7 @@ class RedGhost(Ghost):
         s.cell_x = cell_x
         s.cell_y = cell_y
         s.target_cell = None
-        s.speed = 5
+        s.speed = speed
 
     def update(s, scene):
         super().update()
@@ -73,7 +83,17 @@ class PinkGhost(RedGhost):
         8: (-1, 0),
     }
 
-    def __init__(s, x, y, size, direction, build, cell_size, cell_x, cell_y):
+    def __init__(
+            s,
+            x,
+            y,
+            size,
+            direction,
+            build,
+            cell_size,
+            cell_x,
+            cell_y,
+            speed):
         Ghost.__init__(s, x, y, "pink", size, direction, build)
         s.cell_size = cell_size
         s.spawn_x = x
@@ -83,7 +103,7 @@ class PinkGhost(RedGhost):
         s.cell_x = cell_x
         s.cell_y = cell_y
         s.target_cell = None
-        s.speed = 5
+        s.speed = speed
 
     def choose_target_cell(s, scene):
         start = (s.cell_x, s.cell_y)
