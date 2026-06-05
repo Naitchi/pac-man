@@ -21,6 +21,10 @@ class PlayScene(Scene):
         s.map_finished = None
         s.player = None
         s.ghosts = None
+        s.score = 0
+        s.score_per_pellet = s.game.config.points_per_pacgum
+        s.score_per_super_pellet = s.game.config.points_per_super_pacgum
+        s.score_per_ghost = s.game.config.points_per_ghost
         s.init_new_maze()
         s.wall_color = (0, 140, 220)
         s.floor_color = (0, 0, 0)
@@ -29,29 +33,42 @@ class PlayScene(Scene):
         # PLAYER
         s.cheat_invicibility = False
         s.death_time = None
-        s.score = 0
         s.lives = s.game.config.lives
         s.hud_font = pygame.font.Font(None, 36)
+        s.super_mode_time = None
+        s.super_mode = False
 
     def init_new_maze(s):
-        # TODO il faudrai rajouter des verifications dans le config pour pas qu'ils puissent mettre des labyrinth trop petit pour que tout le monde spawn dedans.
-        # genre 5x5 minimum et 25x25 max?
+        # TODO il faudrai rajouter des verifications dans le config pour pas
+        # qu'ils puissent mettre des labyrinth trop petit pour que tout le
+        # monde spawn dedans. genre 5x5 minimum et 25x25 max?
         # MAZE
         if s.map_finished is None:
             s.map_finished = 0
         else:
             s.map_finished += 1
-        if ((len(s.game.config.levels) <= 10 and s.map_finished == 10)
-                or ((len(s.game.config.levels) > 10
-                     and len(s.game.config.levels) == s.map_finished))):
+        if (len(s.game.config.levels) <= 10 and s.map_finished == 10) or (
+            (
+                len(s.game.config.levels) > 10
+                and len(s.game.config.levels) == s.map_finished
+            )
+        ):
             s.game.change_scene(EndScene(s.game, s.score, True))
         s.maze = MazeGenerator(
-            ((s.game.config.levels[s.map_finished
-                                   % len(s.game.config.levels)].width),
-             (s.game.config.levels[s.map_finished
-                                   % len(s.game.config.levels)].height)),
+            (
+                (
+                    s.game.config.levels[
+                        s.map_finished % len(s.game.config.levels)
+                    ].width
+                ),
+                (
+                    s.game.config.levels[
+                        s.map_finished % len(s.game.config.levels)
+                    ].height
+                ),
+            ),
             perfect=False,
-            seed=(42 if s.map_finished == 0 else -1)
+            seed=(42 if s.map_finished == 0 else -1),
         ).maze
         s.maze_height = len(s.maze)
         s.maze_width = len(s.maze[0]) if s.maze_height else 0
@@ -59,7 +76,8 @@ class PlayScene(Scene):
             print("Error: no maze to show")
             sys.exit()
         s.available_height = max(
-            1, s.game.screen.get_height() - (s.vertical_margin * 2))
+            1, s.game.screen.get_height() - (s.vertical_margin * 2)
+        )
         s.cell_size = min(
             s.game.screen.get_width() // s.maze_width,
             s.available_height // s.maze_height,
@@ -73,8 +91,10 @@ class PlayScene(Scene):
         # TODO: considérer un second set pour les power-ups
         # (simplifie la gestion des pouvoirs quand on en mange un)
         s.pellets = {
-            (s.offset_x + x * s.cell_size + s.cell_size // 2,
-             s.offset_y + y * s.cell_size + s.cell_size // 2)
+            (
+                s.offset_x + x * s.cell_size + s.cell_size // 2,
+                s.offset_y + y * s.cell_size + s.cell_size // 2,
+            )
             for y, row in enumerate(s.maze)
             for x, cell_value in enumerate(row)
             if cell_value != 15
@@ -89,17 +109,25 @@ class PlayScene(Scene):
                     s.offset_x + x * s.cell_size + s.cell_size // 2,
                     s.offset_y + y * s.cell_size + s.cell_size // 2,
                     cell_value,
-                    (s.offset_x + x * s.cell_size +
-                        s.cell_size // 2 - s.player_size // 2),
-                    (s.offset_y + y * s.cell_size +
-                        s.cell_size // 2 - s.player_size // 2),
+                    (
+                        s.offset_x
+                        + x * s.cell_size
+                        + s.cell_size // 2
+                        - s.player_size // 2
+                    ),
+                    (
+                        s.offset_y
+                        + y * s.cell_size
+                        + s.cell_size // 2
+                        - s.player_size // 2
+                    ),
                 )
                 for x, cell_value in enumerate(row)
             ]
             for y, row in enumerate(s.maze)
         ]
         s.player_x, s.player_y = s.get_middle_node()
-        s.disable_pellet(s.player_x, s.player_y)
+        s.delete_pellet(s.player_x, s.player_y)
         s.player_direction = None
         s.player_next_direction = None
         s.next_node_x, s.next_node_y = (None, None)
@@ -107,7 +135,8 @@ class PlayScene(Scene):
             s.player_x - s.player_size // 2,
             s.player_y - s.player_size // 2,
             s.game.config.build,
-            s.player_size)
+            s.player_size,
+        )
 
         # GHOSTS
         _, _, _, ghost_x, ghost_y = s.nodes[0][0]
@@ -122,7 +151,8 @@ class PlayScene(Scene):
                 s.cell_size,
                 0,
                 0,
-                s.speed - 1),
+                s.speed - 1,
+            ),
             PinkGhost(
                 pink_x,
                 pink_y,
@@ -132,11 +162,15 @@ class PlayScene(Scene):
                 s.cell_size,
                 s.maze_width - 1,
                 0,
-                s.speed - 1)]
+                s.speed - 1,
+            ),
+        ]
 
-    def on_enter(s): pass
+    def on_enter(s):
+        pass
 
-    def on_exit(s): pass
+    def on_exit(s):
+        pass
 
     def handle_event(s, event):
         if event.type == pygame.KEYDOWN:
@@ -197,8 +231,11 @@ class PlayScene(Scene):
     def step(s):
         if s.player.dying:
             return
-        if (s.player.rect.topleft != (s.next_node_x, s.next_node_y)
-                and s.next_node_x is not None and s.next_node_y is not None):
+        if (
+            s.player.rect.topleft != (s.next_node_x, s.next_node_y)
+            and s.next_node_x is not None
+            and s.next_node_y is not None
+        ):
             if s.player_direction == 1 and not s.player.dying:
                 s.player.rect.y = max(s.next_node_y, s.player.rect.y - s.speed)
             elif s.player_direction == 2:
@@ -207,16 +244,21 @@ class PlayScene(Scene):
                 s.player.rect.y = min(s.next_node_y, s.player.rect.y + s.speed)
             elif s.player_direction == 8:
                 s.player.rect.x = max(s.next_node_x, s.player.rect.x - s.speed)
-        elif (s.player.rect.topleft == (s.next_node_x, s.next_node_y) or
-              (not s.player_direction and s.player_next_direction)):
-            s.disable_pellet(*s.player.rect.center)
+        elif s.player.rect.topleft == (s.next_node_x, s.next_node_y) or (
+            not s.player_direction and s.player_next_direction
+        ):
+            s.delete_pellet(*s.player.rect.center)
             if s.player_next_direction:
                 s.player_direction = s.player_next_direction
                 s.player_next_direction = None
                 s.player.set_direction(s.player_direction)
-            (_, _, value, pac_man_cell_x,
-             pac_man_cell_y) = s.get_values_from_node()
-            if s.player_direction is not None and (value & s.player_direction) == 0:
+            _, _, value, pac_man_cell_x, pac_man_cell_y = (
+                s.get_values_from_node()
+            )
+            if (
+                s.player_direction is not None
+                and (value & s.player_direction) == 0
+            ):
                 if s.player_direction == 1:
                     dx, dy = 0, -1
                 elif s.player_direction == 2:
@@ -235,7 +277,8 @@ class PlayScene(Scene):
         for ghost in s.ghosts:
             ghost.update(s)
         s.step()
-        if not s.cheat_invicibility:
+        s._disable_super_mode()
+        if not s.cheat_invicibility and not s.super_mode:
             s.check_ghost_collisions()
 
     def check_ghost_collisions(s):
@@ -273,13 +316,35 @@ class PlayScene(Scene):
     def _has_wall(s, cell_value, wall_bit):
         return (cell_value & wall_bit) != 0
 
-    def disable_pellet(s, x, y):
-        s.pellets.discard((x, y))
-        if not len(s.pellets):
-            s.init_new_maze()
+    def delete_pellet(s, x, y):
+        try:
+            s.pellets.remove((x, y))
+            if (x, y) in [
+                (
+                    s.offset_x + x * s.cell_size + s.cell_size // 2,
+                    s.offset_y + y * s.cell_size + s.cell_size // 2,
+                )
+                for (x, y) in [
+                    (0, s.maze_width - 1),
+                    (0, 0),
+                    (s.maze_height - 1, s.maze_width - 1),
+                    (s.maze_height - 1, 0),
+                ]
+            ]:
+                s.score += s.score_per_super_pellet
+                s.super_mode = True
+                s.super_mode_time = time.time()
+            else:
+                s.score += s.score_per_pellet
+            if not len(s.pellets):
+                s.init_new_maze()
+        except KeyError:
+            pass
 
-    def enable_pellet(s, x, y):
-        s.pellets.add((x, y))
+    def _disable_super_mode(s):
+        if s.super_mode and time.time() - s.super_mode_time >= 10:
+            s.super_mode_time = None
+            s.super_mode = False
 
     def _pellet_radius(s, x, y, cell_size):
         is_corner = (
@@ -293,18 +358,21 @@ class PlayScene(Scene):
         return max(2, cell_size // 10)
 
     def get_middle_node(s):
-        x_px, y_px, value, _, _ = s.nodes[
-            len(s.nodes) // 2][len(s.nodes[0]) // 2]
+        x_px, y_px, value, _, _ = s.nodes[len(s.nodes) // 2][
+            len(s.nodes[0]) // 2
+        ]
         if value != 15:
             return (x_px, y_px)
         else:
-            x_px, y_px, value, _, _ = s.nodes[
-                len(s.nodes) // 2][(len(s.nodes[0]) // 2) - 1]
+            x_px, y_px, value, _, _ = s.nodes[len(s.nodes) // 2][
+                (len(s.nodes[0]) // 2) - 1
+            ]
             if value != 15:
                 return (x_px, y_px)
             else:
-                x_px, y_px, value, _, _ = s.nodes[
-                    len(s.nodes) // 2][(len(s.nodes[0]) // 2) + 1]
+                x_px, y_px, value, _, _ = s.nodes[len(s.nodes) // 2][
+                    (len(s.nodes[0]) // 2) + 1
+                ]
                 if value != 15:
                     return (x_px, y_px)
                 else:
@@ -327,8 +395,10 @@ class PlayScene(Scene):
                     s.floor_color,
                     pygame.Rect(left, top, s.cell_size, s.cell_size),
                 )
-                pellet_coords = (left + s.cell_size // 2,
-                                 top + s.cell_size // 2)
+                pellet_coords = (
+                    left + s.cell_size // 2,
+                    top + s.cell_size // 2,
+                )
                 if pellet_coords in s.pellets:
                     pygame.draw.circle(
                         screen,
@@ -338,29 +408,37 @@ class PlayScene(Scene):
                     )
 
                 if s._has_wall(cell_value, s.WALL_TOP):
-                    pygame.draw.line(screen, s.wall_color,
-                                     (left, top), (right, top), wall_thickness)
+                    pygame.draw.line(
+                        screen,
+                        s.wall_color,
+                        (left, top),
+                        (right, top),
+                        wall_thickness,
+                    )
                 if s._has_wall(cell_value, s.WALL_RIGHT):
                     pygame.draw.line(
                         screen,
                         s.wall_color,
                         (right, top),
                         (right, bottom),
-                        wall_thickness)
+                        wall_thickness,
+                    )
                 if s._has_wall(cell_value, s.WALL_BOTTOM):
                     pygame.draw.line(
                         screen,
                         s.wall_color,
                         (left, bottom),
                         (right, bottom),
-                        wall_thickness)
+                        wall_thickness,
+                    )
                 if s._has_wall(cell_value, s.WALL_LEFT):
                     pygame.draw.line(
                         screen,
                         s.wall_color,
                         (left, top),
                         (left, bottom),
-                        wall_thickness)
+                        wall_thickness,
+                    )
         for ghost in s.ghosts:
             ghost.draw(screen)
         s.player.draw(screen)
@@ -368,7 +446,6 @@ class PlayScene(Scene):
 
     def draw_hud(s, screen):
         lives_text = s.hud_font.render(
-            f"Lives: {s.lives}",
-            True,
-            (255, 255, 255))
+            f"Lives: {s.lives}", True, (255, 255, 255)
+        )
         screen.blit(lives_text, (10, s.offset_y))
