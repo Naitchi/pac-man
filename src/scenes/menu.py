@@ -10,6 +10,8 @@ class MainMenuScene(Scene):
         # TODO voir pour mettre une font custom en mode pixelise
         self.title_font = pygame.font.Font(None, 72)
         self.info_font = pygame.font.Font(None, 32)
+        self.leaderboard_title_font = pygame.font.Font(None, 42)
+        self.leaderboard_font = pygame.font.Font(None, 28)
         self.player_x = 0
         self.player_y = random.randint(0, self.game.screen.get_height() - 100)
         self.player = Player(
@@ -43,7 +45,41 @@ class MainMenuScene(Scene):
             "Press Enter to play", True, (255, 255, 255))
         info2 = self.info_font.render(
             "Press Escape to quit", True, (255, 255, 255))
-        screen.blit(title, title.get_rect(center=(screen.get_width()//2, 180)))
-        screen.blit(info1, info1.get_rect(center=(screen.get_width()//2, 260)))
+        screen.blit(
+            title,
+            title.get_rect(
+                center=(
+                    screen.get_width() //
+                    2,
+                    180)))
+        screen.blit(
+            info1,
+            info1.get_rect(
+                center=(
+                    screen.get_width() //
+                    2,
+                    260)))
         screen.blit(info2, info2.get_rect(
-            center=(screen.get_width()//2, screen.get_height() - 180)))
+            center=(screen.get_width() // 2, screen.get_height() - 180)))
+        self.draw_leaderboard(screen)
+
+    def draw_leaderboard(self, screen):
+        x = 60
+        y = 150
+        title = self.leaderboard_title_font.render(
+            "LEADERBOARD :", True, (255, 200, 0))
+        screen.blit(title, (x, y))
+
+        highscores = self.game.highscores.highscores
+        if not highscores:
+            empty = self.leaderboard_font.render(
+                "No scores", True, (255, 255, 255))
+            screen.blit(empty, (x, y + 50))
+            return
+
+        for index, entry in enumerate(highscores[:10], start=1):
+            line = self.leaderboard_font.render(
+                f"{index}. {entry.name} - {entry.score}",
+                True,
+                (255, 255, 255))
+            screen.blit(line, (x, y + 35 + index * 28))

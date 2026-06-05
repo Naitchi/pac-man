@@ -23,12 +23,12 @@ def main() -> None:
     cfg.build = True
 
     try:
-        highscores = parse_highscores("_internal/json/highscores.json")  # noqa : F841
+        highscores = parse_highscores("_internal/json/highscores.json")
     except Exception as e:
         print(f"Error parsing highscores: {e}")
         return
 
-    game = Game(cfg)
+    game = Game(cfg, highscores)
     game.run()
 
 
