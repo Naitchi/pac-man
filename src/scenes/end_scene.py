@@ -1,32 +1,45 @@
-import pygame
+import pygame  # pyright: ignore[reportMissingImports]
 
-from .base import Scene
 from src.highscore.parser import add_entry
 from src.highscore.models import Highscore
-from src.entities.ghost import Ghost
 from src.scenes.menu import MainMenuScene
+from src.entities.ghost import Ghost
+from src.game import Game
+from .base import Scene
 
 
 class EndScene(Scene):
 
-    def __init__(self, game: object, score: int, won: bool = False) -> None:
+    def __init__(self, game: Game, score: int, won: bool = False) -> None:
         super().__init__(game)
-        self.score = score
-        self.won = won
-        self.username = ""
-        self.show_info = f"Enter name: {self.username}"
-        self.show_info_status = 1
-        self.title_font = pygame.font.Font(None, 72)
-        self.info_font = pygame.font.Font(None, 32)
+        self.score: int = score
+        self.won: bool = won
+        self.username: str = ""
+        self.show_info: str = f"Enter name: {self.username}"
+        self.show_info_status: int = 1
+        self.title_font: pygame.font.Font = pygame.font.Font(None, 72)
+        self.info_font: pygame.font.Font = pygame.font.Font(None, 32)
 
         left_ghost_color = "modifier" if self.won else "red"
         right_ghost_color = "modifier" if self.won else "blue"
         left_ghost_direction = "white" if self.won else "down"
         right_ghost_direction = "scared" if self.won else "down"
-        self.left_ghost = Ghost(0, 0, left_ghost_color, 72, left_ghost_direction,
-                                self.game.config.build)
-        self.right_ghost = Ghost(0, 0, right_ghost_color, 72, right_ghost_direction,
-                                 self.game.config.build)
+        self.left_ghost: Ghost = Ghost(
+            0,
+            0,
+            left_ghost_color,
+            72,
+            left_ghost_direction,
+            self.game.config.build,
+        )
+        self.right_ghost: Ghost = Ghost(
+            0,
+            0,
+            right_ghost_color,
+            72,
+            right_ghost_direction,
+            self.game.config.build,
+        )
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.KEYDOWN:
@@ -34,16 +47,17 @@ class EndScene(Scene):
                 self.game.running = False
             elif event.key == pygame.K_BACKSPACE:
                 self.username = self.username[:-1]
-            elif len(self.username) < 10 and (event.unicode.isalnum() or
-                                              event.unicode == " "):
+            elif len(self.username) < 10 and (
+                event.unicode.isalnum() or event.unicode == " "
+            ):
                 self.username += event.unicode
                 self.show_info = f"Enter name: {self.username}"
             elif event.key == pygame.K_RETURN:
                 if self.username and self.show_info_status == 1:
                     highscore = Highscore(name=self.username, score=self.score)
                     self.game.highscores = add_entry(
-                        self.game.config.highscore_filename,
-                        highscore)
+                        self.game.config.highscore_filename, highscore
+                    )
                     self.show_info_status = 0
                     self.show_info = "Score saved! Press Return to restart."
 
@@ -63,9 +77,7 @@ class EndScene(Scene):
         score = self.info_font.render(
             f"Final score: {self.score}", True, (255, 255, 255)
         )
-        name = self.info_font.render(
-            self.show_info, True, (255, 255, 255)
-        )
+        name = self.info_font.render(self.show_info, True, (255, 255, 255))
         quit_info = self.info_font.render(
             "Press Escape to quit", True, (180, 180, 180)
         )

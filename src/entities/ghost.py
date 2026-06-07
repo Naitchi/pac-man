@@ -1,95 +1,127 @@
-import pygame
+from __future__ import annotations
+import pygame  # pyright: ignore[reportMissingImports]
+from typing import List, Tuple, Dict, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.scenes.play import PlayScene
 
 
 class Ghost:
-    DIRECTIONS = {
+    DIRECTIONS: Dict[int, str] = {
         1: "up",
         2: "right",
         4: "down",
         8: "left",
     }
 
-    def __init__(s, x, y, color, size, direction, build):
-        s.color = color
-        s.direction = direction
-        s.size = size
-        s.build = build
-        s.sprites = s.load_sprites()
-        s.current_frame = 0
-        s.frame_count = 0
-        s.animation_speed = 10
+    def __init__(
+        self,
+        x: int,
+        y: int,
+        color: str,
+        size: int,
+        direction: str,
+        build: bool
+    ) -> None:
+        self.color: str = color
+        self.direction: str = direction
+        self.size: int = size
+        self.build: bool = build
+        self.sprites: List[pygame.Surface] = self.load_sprites()
+        self.current_frame: int = 0
+        self.frame_count: int = 0
+        self.animation_speed: int = 10
 
-        s.image = s.sprites[0]
-        s.rect = s.image.get_rect(x=x, y=y)
+        self.image: pygame.Surface = self.sprites[0]
+        self.rect: pygame.Rect = self.image.get_rect(x=x, y=y)
 
-    def get_sprite_path(s, frame):
-        base_path = "_internal/assets" if s.build else "src/entities/assets"
+    def get_sprite_path(self, frame: int) -> str:
+        base_path = "_internal/assets" if self.build else "src/entities/assets"
 
         modifiers = ["scared", "white"]
 
-        if s.color in modifiers:
-            return (
-                f"{base_path}/modifier/{s.color}/"
-                f"{s.color}_{frame}.png"
-            )
+        if self.color in modifiers:
+            return (f"{base_path}/modifier/{self.color}/"
+                    f"{self.color}_{frame}.png")
 
         return (
-            f"{base_path}/{s.color}/{s.direction}/"
-            f"{s.color}_{s.direction}_{frame}.png"
+            f"{base_path}/{self.color}/{self.direction}/"
+            f"{self.color}_{self.direction}_{frame}.png"
         )
 
-    def load_sprites(s):
-        sprites = []
+    def load_sprites(self) -> List[pygame.Surface]:
+        sprites: List[pygame.Surface] = []
 
         for frame in range(1, 3):
-            path = s.get_sprite_path(frame)
+            path = self.get_sprite_path(frame)
             image = pygame.image.load(path)
-            sprites.append(pygame.transform.scale(image, (s.size, s.size)))
+            sprites.append(
+                pygame.transform.scale(image, (self.size, self.size)))
 
         return sprites
 
-    def set_direction(s, direction):
-        direction = s.DIRECTIONS.get(direction, direction)
-        if direction == s.direction:
+    def set_direction(self, direction: int | str) -> None:
+        if isinstance(direction, int):
+            direction_val = self.DIRECTIONS.get(direction, None)
+            direction_str = (
+                direction_val if direction_val is not None else str(direction)
+            )
+        else:
+            direction_str = str(direction)
+        if direction_str == self.direction:
             return
 
-        center = s.rect.center
-        s.direction = direction
-        s.sprites = s.load_sprites()
-        s.current_frame %= 2
-        s.image = s.sprites[s.current_frame]
-        s.rect = s.image.get_rect(center=center)
+        center = self.rect.center
+        self.direction = direction_str
+        self.sprites = self.load_sprites()
+        self.current_frame %= 2
+        self.image = self.sprites[self.current_frame]
+        self.rect = self.image.get_rect(center=center)
 
-    def update(s):
-        s.frame_count += 1
+    def update(self, scene: PlayScene | None = None) -> None:
+        self.frame_count += 1
 
-        if s.frame_count >= s.animation_speed:
-            s.frame_count = 0
-            s.current_frame = (s.current_frame + 1) % 2
-            s.image = s.sprites[s.current_frame]
+        if self.frame_count >= self.animation_speed:
+            self.frame_count = 0
+            self.current_frame = (self.current_frame + 1) % 2
+            self.image = self.sprites[self.current_frame]
 
-    def draw(self, screen):
+    def draw(self, screen: pygame.Surface) -> None:
         screen.blit(self.image, self.rect)
 
     @staticmethod
-    def pixel_to_cell(scene, pos):
+    def pixel_to_cell(
+        scene: PlayScene,
+        pos: Tuple[int, int]
+    ) -> Tuple[int, int]:
         return (
             (pos[0] - scene.offset_x) // scene.cell_size,
             (pos[1] - scene.offset_y) // scene.cell_size,
         )
 
+    def reset_position(self) -> None:
+        pass
+
     @staticmethod
-    def cell_to_pixel(scene, cell_x, cell_y, size):
+    def cell_to_pixel(
+        scene: PlayScene, cell_x: int, cell_y: int, size: int
+    ) -> Tuple[int, int]:
         return (
-            scene.offset_x + cell_x * scene.cell_size +
-            scene.cell_size // 2 - size // 2,
-            scene.offset_y + cell_y * scene.cell_size +
-            scene.cell_size // 2 - size // 2,
+            scene.offset_x
+            + cell_x * scene.cell_size
+            + scene.cell_size // 2
+            - size // 2,
+            scene.offset_y
+            + cell_y * scene.cell_size
+            + scene.cell_size // 2
+            - size // 2,
         )
 
     @staticmethod
-    def get_neighbors(maze, cell_x, cell_y):
-        neighbors = []
+    def get_neighbors(
+        maze: List[List[int]], cell_x: int, cell_y: int
+    ) -> List[Tuple[int, int]]:
+        neighbors: List[Tuple[int, int]] = []
         cell_value = maze[cell_y][cell_x]
         maze_height = len(maze)
         maze_width = len(maze[0])
@@ -106,11 +138,13 @@ class Ghost:
         return neighbors
 
     @staticmethod
-    def find_path(maze, start, target):
-        queue = [start]
-        queue_index = 0
+    def find_path(
+        maze: List[List[int]], start: Tuple[int, int], target: Tuple[int, int]
+    ) -> List[Tuple[int, int]]:
+        queue: List[Tuple[int, int]] = [start]
+        queue_index: int = 0
         visited = {start}
-        came_from = {}
+        came_from: Dict[Tuple[int, int], Tuple[int, int]] = {}
 
         while queue_index < len(queue):
             current = queue[queue_index]

@@ -1,10 +1,10 @@
-import os
-import sys
 from pathlib import Path
+import sys
+import os
 
+from src.highscore.parser import parse_highscores
 from src.config.parser import parse_config
 from src.game import Game
-from src.highscore.parser import parse_highscores
 
 
 def main() -> None:

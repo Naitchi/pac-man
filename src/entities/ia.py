@@ -1,78 +1,90 @@
+from __future__ import annotations
+from typing import Optional, Tuple, TYPE_CHECKING
+
 from src.entities.ghost import Ghost
+
+if TYPE_CHECKING:
+    from src.scenes.play import PlayScene
 
 
 class RedGhost(Ghost):
     def __init__(
-            s,
-            x,
-            y,
-            size,
-            direction,
-            build,
-            cell_size,
-            cell_x,
-            cell_y,
-            speed):
+        self,
+        x: int,
+        y: int,
+        size: int,
+        direction: str,
+        build: bool,
+        cell_size: int,
+        cell_x: int,
+        cell_y: int,
+        speed: int,
+    ) -> None:
         super().__init__(x, y, "red", size, direction, build)
-        s.cell_size = cell_size
-        s.spawn_x = x
-        s.spawn_y = y
-        s.spawn_cell_x = cell_x
-        s.spawn_cell_y = cell_y
-        s.cell_x = cell_x
-        s.cell_y = cell_y
-        s.target_cell = None
-        s.speed = speed
+        self.cell_size: int = cell_size
+        self.spawn_x: int = x
+        self.spawn_y: int = y
+        self.spawn_cell_x: int = cell_x
+        self.spawn_cell_y: int = cell_y
+        self.cell_x: int = cell_x
+        self.cell_y: int = cell_y
+        self.target_cell: Optional[Tuple[int, int]] = None
+        self.speed: int = speed
 
-    def update(s, scene):
+    def update(self, scene: PlayScene | None = None) -> None:
         super().update()
-        if s.target_cell is None:
-            s.choose_target_cell(scene)
-        s.move_to_target_cell(scene)
+        if self.target_cell is None:
+            self.choose_target_cell(scene)
+        self.move_to_target_cell(scene)
 
-    def choose_target_cell(s, scene):
-        start = (s.cell_x, s.cell_y)
-        target = s.pixel_to_cell(scene, scene.player.rect.center)
-        path = s.find_path(scene.maze, start, target)
+    def choose_target_cell(self, scene: PlayScene | None) -> None:
+        if scene is None or scene.player is None:
+            self.target_cell = None
+            return
+        start = (self.cell_x, self.cell_y)
+        target = self.pixel_to_cell(scene, scene.player.rect.center)
+        path = self.find_path(scene.maze, start, target)
 
         if len(path) > 1:
-            s.target_cell = path[1]
+            self.target_cell = path[1]
         else:
-            s.target_cell = None
+            self.target_cell = None
 
-    def move_to_target_cell(s, scene):
-        if s.target_cell is None:
+    def move_to_target_cell(self, scene: PlayScene | None) -> None:
+        if scene is None:
+            return
+        if self.target_cell is None:
             return
 
-        target_x, target_y = s.cell_to_pixel(
+        target_x, target_y = self.cell_to_pixel(
             scene,
-            s.target_cell[0],
-            s.target_cell[1],
-            s.size,
+            self.target_cell[0],
+            self.target_cell[1],
+            self.size,
         )
 
-        if s.rect.x < target_x:
-            s.set_direction("right")
-            s.rect.x = min(target_x, s.rect.x + s.speed)
-        elif s.rect.x > target_x:
-            s.set_direction("left")
-            s.rect.x = max(target_x, s.rect.x - s.speed)
-        elif s.rect.y < target_y:
-            s.set_direction("down")
-            s.rect.y = min(target_y, s.rect.y + s.speed)
-        elif s.rect.y > target_y:
-            s.set_direction("up")
-            s.rect.y = max(target_y, s.rect.y - s.speed)
+        if self.rect.x < target_x:
+            self.set_direction("right")
+            self.rect.x = min(target_x, self.rect.x + self.speed)
+        elif self.rect.x > target_x:
+            self.set_direction("left")
+            self.rect.x = max(target_x, self.rect.x - self.speed)
+        elif self.rect.y < target_y:
+            self.set_direction("down")
+            self.rect.y = min(target_y, self.rect.y + self.speed)
+        elif self.rect.y > target_y:
+            self.set_direction("up")
+            self.rect.y = max(target_y, self.rect.y - self.speed)
 
-        if s.rect.topleft == (target_x, target_y):
-            s.cell_x, s.cell_y = s.target_cell
-            s.target_cell = None
+        if self.rect.topleft == (target_x, target_y):
+            self.cell_x, self.cell_y = self.target_cell
+            self.target_cell = None
 
-    def reset_position(s):
-        s.rect.topleft = (s.spawn_x, s.spawn_y)
-        s.cell_x = s.spawn_cell_x
-        s.cell_y = s.spawn_cell_y
-        s.target_cell = None
+    def reset_position(self) -> None:
+        self.rect.topleft = (self.spawn_x, self.spawn_y)
+        self.cell_x = self.spawn_cell_x
+        self.cell_y = self.spawn_cell_y
+        self.target_cell = None
 
 
 class PinkGhost(RedGhost):
@@ -84,45 +96,49 @@ class PinkGhost(RedGhost):
     }
 
     def __init__(
-            s,
-            x,
-            y,
-            size,
-            direction,
-            build,
-            cell_size,
-            cell_x,
-            cell_y,
-            speed):
-        Ghost.__init__(s, x, y, "pink", size, direction, build)
-        s.cell_size = cell_size
-        s.spawn_x = x
-        s.spawn_y = y
-        s.spawn_cell_x = cell_x
-        s.spawn_cell_y = cell_y
-        s.cell_x = cell_x
-        s.cell_y = cell_y
-        s.target_cell = None
-        s.speed = speed
+        self,
+        x: int,
+        y: int,
+        size: int,
+        direction: str,
+        build: bool,
+        cell_size: int,
+        cell_x: int,
+        cell_y: int,
+        speed: int,
+    ) -> None:
+        Ghost.__init__(self, x, y, "pink", size, direction, build)
+        self.cell_size: int = cell_size
+        self.spawn_x: int = x
+        self.spawn_y: int = y
+        self.spawn_cell_x: int = cell_x
+        self.spawn_cell_y: int = cell_y
+        self.cell_x: int = cell_x
+        self.cell_y: int = cell_y
+        self.target_cell: Optional[Tuple[int, int]] = None
+        self.speed: int = speed
 
-    def choose_target_cell(s, scene):
-        start = (s.cell_x, s.cell_y)
-        player_cell = s.pixel_to_cell(scene, scene.player.rect.center)
+    def choose_target_cell(self, scene: PlayScene | None) -> None:
+        if scene is None or scene.player is None:
+            self.target_cell = None
+            return
+        start = (self.cell_x, self.cell_y)
+        player_cell = self.pixel_to_cell(scene, scene.player.rect.center)
         direction = scene.player_direction or scene.player.direction
-        dx, dy = s.DIRECTION_OFFSET.get(direction, (1, 0))
+        dx, dy = self.DIRECTION_OFFSET.get(direction, (1, 0))
         target = player_cell
         for _ in range(4):
             next_cell = (target[0] + dx, target[1] + dy)
-            neighbors = s.get_neighbors(scene.maze, target[0], target[1])
+            neighbors = self.get_neighbors(scene.maze, target[0], target[1])
             if next_cell not in neighbors:
                 break
             target = next_cell
-        path = s.find_path(scene.maze, start, target)
+        path = self.find_path(scene.maze, start, target)
 
         if len(path) <= 1:
-            path = s.find_path(scene.maze, start, player_cell)
+            path = self.find_path(scene.maze, start, player_cell)
 
         if len(path) > 1:
-            s.target_cell = path[1]
+            self.target_cell = path[1]
         else:
-            s.target_cell = None
+            self.target_cell = None

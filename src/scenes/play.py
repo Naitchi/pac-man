@@ -1,11 +1,15 @@
-import sys
-import pygame
-from src.entities.ia import PinkGhost, RedGhost
-from src.entities.player import Player
-from .base import Scene
-from .end_scene import EndScene
-from mazegenerator import MazeGenerator
+from typing import Literal, Optional, List, Tuple, Set
+import pygame  # pyright: ignore[reportMissingImports]
 import time
+import sys
+
+from src.entities.ia import PinkGhost, RedGhost
+from mazegenerator import MazeGenerator
+from src.entities.player import Player
+from src.entities.ghost import Ghost
+from .end_scene import EndScene
+from src.game import Game
+from .base import Scene
 
 
 class PlayScene(Scene):
@@ -14,185 +18,185 @@ class PlayScene(Scene):
     WALL_BOTTOM = 4
     WALL_LEFT = 8
 
-    def __init__(s, game):
+    def __init__(self, game: Game) -> None:
         # MAZE
         super().__init__(game)
-        s.vertical_margin = 150  # TODO un pourcentage a la place ?
-        s.map_finished = None
-        s.player = None
-        s.ghosts = None
-        s.score = 0
-        s.score_per_pellet = s.game.config.points_per_pacgum
-        s.score_per_super_pellet = s.game.config.points_per_super_pacgum
-        s.score_per_ghost = s.game.config.points_per_ghost
-        s.init_new_maze()
-        s.wall_color = (0, 140, 220)
-        s.floor_color = (0, 0, 0)
-        s.pellet_color = (255, 255, 255)
+        self.vertical_margin: int = 150  # TODO un pourcentage a la place ?
+        self.map_finished: Optional[int] = None
+        self.player: Optional[Player] = None
+        self.ghosts: List[Ghost] = []
+        self.score: int = 0
+        self.score_per_pellet: int = self.game.config.points_per_pacgum
+        self.score_per_super_pellet: int = (
+            self.game.config.points_per_super_pacgum)
+        self.score_per_ghost: int = self.game.config.points_per_ghost
+        self.init_new_maze()
+        self.wall_color: Tuple[int, int, int] = (0, 140, 220)
+        self.floor_color: Tuple[int, int, int] = (0, 0, 0)
+        self.pellet_color: Tuple[int, int, int] = (255, 255, 255)
 
         # PLAYER
-        s.cheat_invicibility = False
-        s.death_time = None
-        s.lives = s.game.config.lives
-        s.hud_font = pygame.font.Font(None, 36)
-        s.super_mode_time = None
-        s.super_mode = False
+        self.cheat_invicibility: bool = False
+        self.death_time: Optional[float] = None
+        self.lives: int = self.game.config.lives
+        self.hud_font: pygame.font.Font = pygame.font.Font(None, 36)
+        self.super_mode_time: Optional[float] = None
+        self.super_mode: bool = False
 
-    def init_new_maze(s):
+    def init_new_maze(self) -> None:
         # TODO il faudrai rajouter des verifications dans le config pour pas
         # qu'ils puissent mettre des labyrinth trop petit pour que tout le
         # monde spawn dedans. genre 5x5 minimum et 25x25 max?
         # MAZE
-        if s.map_finished is None:
-            s.map_finished = 0
+        if self.map_finished is None:
+            self.map_finished = 0
         else:
-            s.map_finished += 1
-        if (len(s.game.config.levels) <= 10 and s.map_finished == 10) or (
-            (
-                len(s.game.config.levels) > 10
-                and len(s.game.config.levels) == s.map_finished
-            )
-        ):
-            s.game.change_scene(EndScene(s.game, s.score, True))
-        s.maze = MazeGenerator(
+            self.map_finished += 1
+        if (len(self.game.config.levels) <= 10 and
+            self.map_finished == 10) or (
+            (len(self.game.config.levels) > 10 and
+             len(self.game.config.levels) == self.map_finished)):
+            self.game.change_scene(EndScene(self.game, self.score, True))
+        self.maze: List[List[int]] = MazeGenerator(
             (
                 (
-                    s.game.config.levels[
-                        s.map_finished % len(s.game.config.levels)
+                    self.game.config.levels[
+                        self.map_finished % len(self.game.config.levels)
                     ].width
                 ),
                 (
-                    s.game.config.levels[
-                        s.map_finished % len(s.game.config.levels)
+                    self.game.config.levels[
+                        self.map_finished % len(self.game.config.levels)
                     ].height
                 ),
             ),
             perfect=False,
-            seed=(42 if s.map_finished == 0 else -1),
+            seed=(42 if self.map_finished == 0 else -1),
         ).maze
-        s.maze_height = len(s.maze)
-        s.maze_width = len(s.maze[0]) if s.maze_height else 0
-        if s.maze_height == 0 or s.maze_width == 0:
+        self.maze_height: int = len(self.maze)
+        self.maze_width: int = len(self.maze[0]) if self.maze_height else 0
+        if self.maze_height == 0 or self.maze_width == 0:
             print("Error: no maze to show")
             sys.exit()
-        s.available_height = max(
-            1, s.game.screen.get_height() - (s.vertical_margin * 2)
+        self.available_height: int = max(
+            1, self.game.screen.get_height() - (self.vertical_margin * 2)
         )
-        s.cell_size = min(
-            s.game.screen.get_width() // s.maze_width,
-            s.available_height // s.maze_height,
+        self.cell_size: int = min(
+            self.game.screen.get_width() // self.maze_width,
+            self.available_height // self.maze_height,
         )
-        s.offset_x = (
-            s.game.screen.get_width() - s.cell_size * s.maze_width
+        self.offset_x: int = (
+            self.game.screen.get_width() - self.cell_size * self.maze_width
         ) // 2
-        s.offset_y = s.vertical_margin + (
-            (s.available_height - s.cell_size * s.maze_height) // 2
+        self.offset_y: int = self.vertical_margin + (
+            (self.available_height - self.cell_size * self.maze_height) // 2
         )
-        # TODO: considérer un second set pour les power-ups
-        # (simplifie la gestion des pouvoirs quand on en mange un)
-        s.pellets = {
+        self.pellets: Set[Tuple[int, int]] = {
             (
-                s.offset_x + x * s.cell_size + s.cell_size // 2,
-                s.offset_y + y * s.cell_size + s.cell_size // 2,
+                self.offset_x + x * self.cell_size + self.cell_size // 2,
+                self.offset_y + y * self.cell_size + self.cell_size // 2,
             )
-            for y, row in enumerate(s.maze)
+            for y, row in enumerate(self.maze)
             for x, cell_value in enumerate(row)
             if cell_value != 15
         }
 
         # PLAYER
-        s.player_size = int(s.cell_size * 0.8)
-        s.speed = int(s.cell_size * 0.0538)
-        s.nodes = [
+        self.player_size: int = int(self.cell_size * 0.8)
+        self.speed: int = int(self.cell_size * 0.0538)
+        self.nodes: List[List[Tuple[int, int, int, int, int]]] = [
             [
                 (
-                    s.offset_x + x * s.cell_size + s.cell_size // 2,
-                    s.offset_y + y * s.cell_size + s.cell_size // 2,
+                    self.offset_x + x * self.cell_size + self.cell_size // 2,
+                    self.offset_y + y * self.cell_size + self.cell_size // 2,
                     cell_value,
                     (
-                        s.offset_x
-                        + x * s.cell_size
-                        + s.cell_size // 2
-                        - s.player_size // 2
+                        self.offset_x
+                        + x * self.cell_size
+                        + self.cell_size // 2
+                        - self.player_size // 2
                     ),
                     (
-                        s.offset_y
-                        + y * s.cell_size
-                        + s.cell_size // 2
-                        - s.player_size // 2
+                        self.offset_y
+                        + y * self.cell_size
+                        + self.cell_size // 2
+                        - self.player_size // 2
                     ),
                 )
                 for x, cell_value in enumerate(row)
             ]
-            for y, row in enumerate(s.maze)
+            for y, row in enumerate(self.maze)
         ]
-        s.player_x, s.player_y = s.get_middle_node()
-        s.delete_pellet(s.player_x, s.player_y)
-        s.player_direction = None
-        s.player_next_direction = None
-        s.next_node_x, s.next_node_y = (None, None)
-        s.player = Player(
-            s.player_x - s.player_size // 2,
-            s.player_y - s.player_size // 2,
-            s.game.config.build,
-            s.player_size,
+        self.player_x, self.player_y = self.get_middle_node()
+        self.delete_pellet(self.player_x, self.player_y)
+        self.player_direction: Optional[Literal[1, 2, 4, 8]] = None
+        self.player_next_direction: Optional[Literal[1, 2, 4, 8]] = None
+        self.next_node_x: Optional[int] = None
+        self.next_node_y: Optional[int] = None
+        self.player = Player(
+            self.player_x - self.player_size // 2,
+            self.player_y - self.player_size // 2,
+            self.game.config.build,
+            self.player_size,
         )
 
         # GHOSTS
-        _, _, _, ghost_x, ghost_y = s.nodes[0][0]
-        _, _, _, pink_x, pink_y = s.nodes[0][s.maze_width - 1]
-        s.ghosts = [
+        _, _, _, ghost_x, ghost_y = self.nodes[0][0]
+        _, _, _, pink_x, pink_y = self.nodes[0][self.maze_width - 1]
+        self.ghosts = [
             RedGhost(
                 ghost_x,
                 ghost_y,
-                s.player_size,
+                self.player_size,
                 "down",
-                s.game.config.build,
-                s.cell_size,
+                self.game.config.build,
+                self.cell_size,
                 0,
                 0,
-                s.speed - 1,
+                self.speed - 1,
             ),
             PinkGhost(
                 pink_x,
                 pink_y,
-                s.player_size,
+                self.player_size,
                 "down",
-                s.game.config.build,
-                s.cell_size,
-                s.maze_width - 1,
+                self.game.config.build,
+                self.cell_size,
+                self.maze_width - 1,
                 0,
-                s.speed - 1,
+                self.speed - 1,
             ),
         ]
 
-    def on_enter(s):
+    def on_enter(self) -> None:
         pass
 
-    def on_exit(s):
+    def on_exit(self) -> None:
         pass
 
-    def handle_event(s, event):
+    def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                s.game.running = False
+                self.game.running = False
             elif event.key == pygame.K_UP:
-                s.player_next_direction = 1
+                self.player_next_direction = 1
             elif event.key == pygame.K_RIGHT:
-                s.player_next_direction = 2
+                self.player_next_direction = 2
             elif event.key == pygame.K_DOWN:
-                s.player_next_direction = 4
+                self.player_next_direction = 4
             elif event.key == pygame.K_LEFT:
-                s.player_next_direction = 8
+                self.player_next_direction = 8
             elif event.key == pygame.K_7:  # TODO mettre une legende pour ca
-                s.init_new_maze()
+                self.init_new_maze()
             elif event.key == pygame.K_8:  # TODO mettre une legende pour ca
-                s.cheat_invicibility = not s.cheat_invicibility
+                self.cheat_invicibility = not self.cheat_invicibility
 
-    def get_values_from_node(s):
-        px_x = s.player.rect.x
-        px_y = s.player.rect.y
-        for row in s.nodes:
+    def get_values_from_node(self) -> Optional[Tuple[int, int, int, int, int]]:
+        if self.player is None:
+            return None
+        px_x = self.player.rect.x
+        px_y = self.player.rect.y
+        for row in self.nodes:
             for (
                 middle_x_px,
                 middle_y_px,
@@ -201,9 +205,9 @@ class PlayScene(Scene):
                 pac_man_cell_y,
             ) in row:
                 if (
-                    not s.next_node_x
+                    not self.next_node_x
                     and pac_man_cell_x == px_x
-                    and not s.next_node_y
+                    and not self.next_node_y
                     and pac_man_cell_y == px_y
                 ):
                     return (
@@ -215,10 +219,10 @@ class PlayScene(Scene):
                     )
 
                 if (
-                    s.next_node_x
-                    and pac_man_cell_x == s.next_node_x
-                    and s.next_node_y
-                    and pac_man_cell_y == s.next_node_y
+                    self.next_node_x
+                    and pac_man_cell_x == self.next_node_x
+                    and self.next_node_y
+                    and pac_man_cell_y == self.next_node_y
                 ):
                     return (
                         middle_x_px,
@@ -227,151 +231,172 @@ class PlayScene(Scene):
                         pac_man_cell_x,
                         pac_man_cell_y,
                     )
+        return None
 
-    def step(s):
-        if s.player.dying:
+    def step(self) -> None:
+        if self.player is None:
+            return
+        if self.player.dying:
             return
         if (
-            s.player.rect.topleft != (s.next_node_x, s.next_node_y)
-            and s.next_node_x is not None
-            and s.next_node_y is not None
+            self.player.rect.topleft != (self.next_node_x, self.next_node_y)
+            and self.next_node_x is not None
+            and self.next_node_y is not None
         ):
-            if s.player_direction == 1 and not s.player.dying:
-                s.player.rect.y = max(s.next_node_y, s.player.rect.y - s.speed)
-            elif s.player_direction == 2:
-                s.player.rect.x = min(s.next_node_x, s.player.rect.x + s.speed)
-            elif s.player_direction == 4:
-                s.player.rect.y = min(s.next_node_y, s.player.rect.y + s.speed)
-            elif s.player_direction == 8:
-                s.player.rect.x = max(s.next_node_x, s.player.rect.x - s.speed)
-        elif s.player.rect.topleft == (s.next_node_x, s.next_node_y) or (
-            not s.player_direction and s.player_next_direction
-        ):
-            s.delete_pellet(*s.player.rect.center)
-            if s.player_next_direction:
-                s.player_direction = s.player_next_direction
-                s.player_next_direction = None
-                s.player.set_direction(s.player_direction)
-            _, _, value, pac_man_cell_x, pac_man_cell_y = (
-                s.get_values_from_node()
-            )
+            if self.player_direction == 1 and not self.player.dying:
+                self.player.rect.y = max(
+                    self.next_node_y, self.player.rect.y - self.speed)
+            elif self.player_direction == 2:
+                self.player.rect.x = min(
+                    self.next_node_x, self.player.rect.x + self.speed)
+            elif self.player_direction == 4:
+                self.player.rect.y = min(
+                    self.next_node_y, self.player.rect.y + self.speed)
+            elif self.player_direction == 8:
+                self.player.rect.x = max(
+                    self.next_node_x, self.player.rect.x - self.speed)
+        elif self.player.rect.topleft == (
+                self.next_node_x, self.next_node_y) or (
+                not self.player_direction and self.player_next_direction):
+            self.delete_pellet(*self.player.rect.center)
+            if self.player_next_direction:
+                self.player_direction = self.player_next_direction
+                self.player_next_direction = None
+                self.player.set_direction(self.player_direction)
+            node_values = self.get_values_from_node()
+            if node_values is None:
+                return
+            _, _, value, pac_man_cell_x, pac_man_cell_y = node_values
             if (
-                s.player_direction is not None
-                and (value & s.player_direction) == 0
+                self.player_direction is not None
+                and (value & self.player_direction) == 0
             ):
-                if s.player_direction == 1:
+                if self.player_direction == 1:
                     dx, dy = 0, -1
-                elif s.player_direction == 2:
+                elif self.player_direction == 2:
                     dx, dy = 1, 0
-                elif s.player_direction == 4:
+                elif self.player_direction == 4:
                     dx, dy = 0, 1
-                elif s.player_direction == 8:
+                elif self.player_direction == 8:
                     dx, dy = -1, 0
-                s.next_node_x = pac_man_cell_x + dx * s.cell_size
-                s.next_node_y = pac_man_cell_y + dy * s.cell_size
+                else:
+                    dx, dy = 0, 0
+                self.next_node_x = pac_man_cell_x + dx * self.cell_size
+                self.next_node_y = pac_man_cell_y + dy * self.cell_size
             else:
-                s.player_direction = None
+                self.player_direction = None
 
-    def update(s, dt):
-        s.player.update(dt)
-        for ghost in s.ghosts:
-            ghost.update(s)
-        s.step()
-        s._disable_super_mode()
-        if not s.cheat_invicibility and not s.super_mode:
-            s.check_ghost_collisions()
+    def update(self, dt: float) -> None:
+        if self.player is None:
+            return
+        self.player.update(dt)
+        for ghost in self.ghosts:
+            ghost.update(self)
+        self.step()
+        self._disable_super_mode()
+        if not self.cheat_invicibility and not self.super_mode:
+            self.check_ghost_collisions()
 
-    def check_ghost_collisions(s):
-        for ghost in s.ghosts:
-            if ghost.rect.colliderect(s.player.rect):
-                if not s.death_time:
-                    s.player.death()
-                    s.death_time = time.time()
+    def check_ghost_collisions(self) -> None:
+        if self.player is None:
+            return
+        for ghost in self.ghosts:
+            if ghost.rect.colliderect(self.player.rect):
+                if not self.death_time:
+                    self.player.death()
+                    self.death_time = time.time()
                     return
 
-                if time.time() - s.death_time >= 2:
-                    s.death_time = None
-                    s.lives -= 1
-                    if s.lives == 0:
-                        s.game.change_scene(EndScene(s.game, s.score, False))
+                if time.time() - self.death_time >= 2:
+                    self.death_time = None
+                    self.lives -= 1
+                    if self.lives == 0:
+                        self.game.change_scene(
+                            EndScene(self.game, self.score, False))
                         return
-                    s.reset_round_positions()
+                    self.reset_round_positions()
                 return
 
-    def reset_round_positions(s):
-        s.reset_player_position()
-        for ghost in s.ghosts:
+    def reset_round_positions(self) -> None:
+        self.reset_player_position()
+        for ghost in self.ghosts:
             ghost.reset_position()
 
-    def reset_player_position(s):
-        s.player.rect.topleft = (
-            s.player_x - s.player_size // 2,
-            s.player_y - s.player_size // 2,
+    def reset_player_position(self) -> None:
+        if self.player is None:
+            return
+        self.player.rect.topleft = (
+            self.player_x - self.player_size // 2,
+            self.player_y - self.player_size // 2,
         )
-        s.player_direction = None
-        s.player_next_direction = None
-        s.player.dying = False
-        s.next_node_x, s.next_node_y = (None, None)
+        self.player_direction = None
+        self.player_next_direction = None
+        self.player.dying = False
+        self.next_node_x, self.next_node_y = (None, None)
 
-    def _has_wall(s, cell_value, wall_bit):
+    def _has_wall(self, cell_value: int, wall_bit: int) -> bool:
         return (cell_value & wall_bit) != 0
 
-    def delete_pellet(s, x, y):
+    def delete_pellet(self, x: int, y: int) -> None:
         try:
-            s.pellets.remove((x, y))
+            self.pellets.remove((x, y))
             if (x, y) in [
                 (
-                    s.offset_x + x * s.cell_size + s.cell_size // 2,
-                    s.offset_y + y * s.cell_size + s.cell_size // 2,
+                    self.offset_x + x * self.cell_size + self.cell_size // 2,
+                    self.offset_y + y * self.cell_size + self.cell_size // 2,
                 )
                 for (x, y) in [
-                    (0, s.maze_width - 1),
+                    (0, self.maze_width - 1),
                     (0, 0),
-                    (s.maze_height - 1, s.maze_width - 1),
-                    (s.maze_height - 1, 0),
+                    (self.maze_height - 1, self.maze_width - 1),
+                    (self.maze_height - 1, 0),
                 ]
             ]:
-                s.score += s.score_per_super_pellet
-                s.super_mode = True
-                s.super_mode_time = time.time()
+                self.score += self.score_per_super_pellet
+                self.super_mode = True
+                self.super_mode_time = time.time()
             else:
-                s.score += s.score_per_pellet
-            if not len(s.pellets):
-                s.init_new_maze()
+                self.score += self.score_per_pellet
+            if not len(self.pellets):
+                self.init_new_maze()
         except KeyError:
             pass
 
-    def _disable_super_mode(s):
-        if s.super_mode and time.time() - s.super_mode_time >= 10:
-            s.super_mode_time = None
-            s.super_mode = False
+    def _disable_super_mode(self) -> None:
+        if (
+            self.super_mode
+            and self.super_mode_time is not None
+            and time.time() - self.super_mode_time >= 10
+        ):
+            self.super_mode_time = None
+            self.super_mode = False
 
-    def _pellet_radius(s, x, y, cell_size):
+    def _pellet_radius(self, x: int, y: int, cell_size: int) -> int:
         is_corner = (
             (x, y) == (0, 0)
-            or (x, y) == (0, len(s.maze) - 1)
-            or (x, y) == (len(s.maze[0]) - 1, 0)
-            or (x, y) == (len(s.maze[0]) - 1, len(s.maze) - 1)
+            or (x, y) == (0, len(self.maze) - 1)
+            or (x, y) == (len(self.maze[0]) - 1, 0)
+            or (x, y) == (len(self.maze[0]) - 1, len(self.maze) - 1)
         )
         if is_corner:
             return max(4, cell_size // 5)
         return max(2, cell_size // 10)
 
-    def get_middle_node(s):
-        x_px, y_px, value, _, _ = s.nodes[len(s.nodes) // 2][
-            len(s.nodes[0]) // 2
+    def get_middle_node(self) -> Tuple[int, int]:
+        x_px, y_px, value, _, _ = self.nodes[len(self.nodes) // 2][
+            len(self.nodes[0]) // 2
         ]
         if value != 15:
             return (x_px, y_px)
         else:
-            x_px, y_px, value, _, _ = s.nodes[len(s.nodes) // 2][
-                (len(s.nodes[0]) // 2) - 1
+            x_px, y_px, value, _, _ = self.nodes[len(self.nodes) // 2][
+                (len(self.nodes[0]) // 2) - 1
             ]
             if value != 15:
                 return (x_px, y_px)
             else:
-                x_px, y_px, value, _, _ = s.nodes[len(s.nodes) // 2][
-                    (len(s.nodes[0]) // 2) + 1
+                x_px, y_px, value, _, _ = self.nodes[len(self.nodes) // 2][
+                    (len(self.nodes[0]) // 2) + 1
                 ]
                 if value != 15:
                     return (x_px, y_px)
@@ -379,73 +404,74 @@ class PlayScene(Scene):
                     print("Error: was not eable to spawn in pac-man")
                     sys.exit()
 
-    def draw(s, screen):
-        screen.fill(s.floor_color)
-        wall_thickness = max(2, s.cell_size // 8)
+    def draw(self, screen: pygame.Surface) -> None:
+        screen.fill(self.floor_color)
+        wall_thickness = max(2, self.cell_size // 8)
 
-        for y, row in enumerate(s.maze):
+        for y, row in enumerate(self.maze):
             for x, cell_value in enumerate(row):
-                left = s.offset_x + x * s.cell_size
-                top = s.offset_y + y * s.cell_size
-                right = left + s.cell_size
-                bottom = top + s.cell_size
+                left = self.offset_x + x * self.cell_size
+                top = self.offset_y + y * self.cell_size
+                right = left + self.cell_size
+                bottom = top + self.cell_size
 
                 pygame.draw.rect(
                     screen,
-                    s.floor_color,
-                    pygame.Rect(left, top, s.cell_size, s.cell_size),
+                    self.floor_color,
+                    pygame.Rect(left, top, self.cell_size, self.cell_size),
                 )
                 pellet_coords = (
-                    left + s.cell_size // 2,
-                    top + s.cell_size // 2,
+                    left + self.cell_size // 2,
+                    top + self.cell_size // 2,
                 )
-                if pellet_coords in s.pellets:
+                if pellet_coords in self.pellets:
                     pygame.draw.circle(
                         screen,
-                        s.pellet_color,
+                        self.pellet_color,
                         pellet_coords,
-                        s._pellet_radius(x, y, s.cell_size),
+                        self._pellet_radius(x, y, self.cell_size),
                     )
 
-                if s._has_wall(cell_value, s.WALL_TOP):
+                if self._has_wall(cell_value, self.WALL_TOP):
                     pygame.draw.line(
                         screen,
-                        s.wall_color,
+                        self.wall_color,
                         (left, top),
                         (right, top),
                         wall_thickness,
                     )
-                if s._has_wall(cell_value, s.WALL_RIGHT):
+                if self._has_wall(cell_value, self.WALL_RIGHT):
                     pygame.draw.line(
                         screen,
-                        s.wall_color,
+                        self.wall_color,
                         (right, top),
                         (right, bottom),
                         wall_thickness,
                     )
-                if s._has_wall(cell_value, s.WALL_BOTTOM):
+                if self._has_wall(cell_value, self.WALL_BOTTOM):
                     pygame.draw.line(
                         screen,
-                        s.wall_color,
+                        self.wall_color,
                         (left, bottom),
                         (right, bottom),
                         wall_thickness,
                     )
-                if s._has_wall(cell_value, s.WALL_LEFT):
+                if self._has_wall(cell_value, self.WALL_LEFT):
                     pygame.draw.line(
                         screen,
-                        s.wall_color,
+                        self.wall_color,
                         (left, top),
                         (left, bottom),
                         wall_thickness,
                     )
-        for ghost in s.ghosts:
+        for ghost in self.ghosts:
             ghost.draw(screen)
-        s.player.draw(screen)
-        s.draw_hud(screen)
+        if self.player is not None:
+            self.player.draw(screen)
+        self.draw_hud(screen)
 
-    def draw_hud(s, screen):
-        lives_text = s.hud_font.render(
-            f"Lives: {s.lives}", True, (255, 255, 255)
+    def draw_hud(self, screen: pygame.Surface) -> None:
+        lives_text = self.hud_font.render(
+            f"Lives: {self.lives}", True, (255, 255, 255)
         )
-        screen.blit(lives_text, (10, s.offset_y))
+        screen.blit(lives_text, (10, self.offset_y))

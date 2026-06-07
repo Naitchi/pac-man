@@ -1,53 +1,59 @@
-import pygame
+import pygame  # pyright: ignore[reportMissingImports]
+from typing import Optional, Tuple, List
 
 
 class Player:
-    def __init__(s, x, y, build, size=None):
-        s.build = build
-        base_path = "_internal/assets" if s.build else "src/entities/assets"
-        s.sprites = [
+    def __init__(
+        self, x: int, y: int, build: bool, size: Optional[int] = None
+    ) -> None:
+        self.build: bool = build
+        base_path = "_internal/assets" if self.build else "src/entities/assets"
+        self.sprites: List[pygame.Surface] = [
             pygame.image.load(f"{base_path}/pacman_1.png"),
             pygame.image.load(f"{base_path}/pacman_2.png"),
             pygame.image.load(f"{base_path}/pacman_3.png"),
-            pygame.image.load(f"{base_path}/pacman_2.png")
+            pygame.image.load(f"{base_path}/pacman_2.png"),
         ]
+        self.size: Optional[Tuple[int, int]] = None
         if size:
-            s.size = (size, size)
-            s.sprites = [pygame.transform.smoothscale(
-                img, s.size) for img in s.sprites]
-        s.current_frame = 0
-        s.animation_fps = 10
-        s.animation_timer = 0.0
-        s._last_ticks = None
-        s.direction = 2
-        s.dying = False
-        s.image = s._apply_direction(s.sprites[0])
-        s.rect = s.image.get_rect(x=x, y=y)
+            self.size = (size, size)
+            self.sprites = [
+                pygame.transform.smoothscale(img, self.size)
+                for img in self.sprites
+            ]
+        self.current_frame: int = 0
+        self.animation_fps: int = 10
+        self.animation_timer: float = 0.0
+        self._last_ticks: Optional[int] = None
+        self.direction: int = 2
+        self.dying: bool = False
+        self.image: pygame.Surface = self._apply_direction(self.sprites[0])
+        self.rect: pygame.Rect = self.image.get_rect(x=x, y=y)
 
-    def _apply_direction(s, image):
-        center = s.rect.center if hasattr(s, "rect") else None
-        if s.direction == 1:
+    def _apply_direction(self, image: pygame.Surface) -> pygame.Surface:
+        center = self.rect.center if hasattr(self, "rect") else None
+        if self.direction == 1:
             image = pygame.transform.rotate(image, 90)
-        elif s.direction == 4:
+        elif self.direction == 4:
             image = pygame.transform.rotate(image, -90)
-        elif s.direction == 8:
+        elif self.direction == 8:
             image = pygame.transform.flip(image, True, False)
 
         if center is None:
             return image
 
         rect = image.get_rect(center=center)
-        s.rect = rect
+        self.rect = rect
         return image
 
-    def set_direction(s, direction):
-        s.direction = direction
-        s.image = s._apply_direction(s.sprites[s.current_frame])
+    def set_direction(self, direction: int) -> None:
+        self.direction = direction
+        self.image = self._apply_direction(self.sprites[self.current_frame])
 
-    def death(s):
-        s.dying = True
-        base_path = "_internal/assets" if s.build else "src/entities/assets"
-        s.dying_sprites = [
+    def death(self) -> None:
+        self.dying = True
+        base_path = "_internal/assets" if self.build else "src/entities/assets"
+        self.dying_sprites: List[pygame.Surface] = [
             pygame.image.load(f"{base_path}/dying/dying_1.png"),
             pygame.image.load(f"{base_path}/dying/dying_2.png"),
             pygame.image.load(f"{base_path}/dying/dying_3.png"),
@@ -60,44 +66,51 @@ class Player:
             pygame.image.load(f"{base_path}/dying/dying_10.png"),
             pygame.image.load(f"{base_path}/dying/dying_11.png"),
         ]
-        if s.size:
-            s.dying_sprites = [
-                (pygame.transform.smoothscale(img, s.size)
-                 if img is not None else None)
-                for img in s.dying_sprites
+        if self.size:
+            self.dying_sprites = [
+                (
+                    pygame.transform.smoothscale(img, self.size)
+                    if img is not None
+                    else None
+                )
+                for img in self.dying_sprites
             ]
-        s.image = s.dying_sprites[0]
+        self.image = self.dying_sprites[0]
 
-    def update(s, dt=None):
+    def update(self, dt: Optional[float] = None) -> None:
         if dt is None:
             now = pygame.time.get_ticks()
-            if s._last_ticks is None:
-                s._last_ticks = now
+            if self._last_ticks is None:
+                self._last_ticks = now
                 return
-            dt = (now - s._last_ticks) / 1000.0
-            s._last_ticks = now
+            dt = (now - self._last_ticks) / 1000.0
+            self._last_ticks = now
         else:
             dt = float(dt)
+            self.animation_timer += dt
 
-        s.animation_timer += dt
-        interval = 1.0 / max(1, s.animation_fps)
+        interval = 1.0 / max(1, self.animation_fps)
 
-        if s.dying and s.current_frame >= len(s.dying_sprites) - 1:
-            transparent = pygame.Surface(s.size, pygame.SRCALPHA)
+        if self.dying and self.current_frame >= len(self.dying_sprites) - 1:
+            if self.size is None:
+                return
+            transparent = pygame.Surface(self.size, pygame.SRCALPHA)
             transparent.fill((0, 0, 0, 0))
-            s.image = transparent
+            self.image = transparent
             return
 
-        if s.animation_timer >= interval and s.dying:
-            steps = int(s.animation_timer // interval)
-            s.animation_timer -= steps * interval
-            s.current_frame = (s.current_frame + steps)
-            s.image = s.dying_sprites[s.current_frame]
-        elif s.animation_timer >= interval:
-            steps = int(s.animation_timer // interval)
-            s.animation_timer -= steps * interval
-            s.current_frame = (s.current_frame + steps) % len(s.sprites)
-            s.image = s._apply_direction(s.sprites[s.current_frame])
+        if self.animation_timer >= interval and self.dying:
+            steps = int(self.animation_timer // interval)
+            self.animation_timer -= steps * interval
+            self.current_frame = self.current_frame + steps
+            self.image = self.dying_sprites[self.current_frame]
+        elif self.animation_timer >= interval:
+            steps = int(self.animation_timer // interval)
+            self.animation_timer -= steps * interval
+            self.current_frame = ((self.current_frame + steps)
+                                  % len(self.sprites))
+            self.image = self._apply_direction(
+                self.sprites[self.current_frame])
 
-    def draw(self, screen):
+    def draw(self, screen: pygame.Surface) -> None:
         screen.blit(self.image, self.rect)
