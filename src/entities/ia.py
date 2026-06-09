@@ -1,5 +1,7 @@
 from __future__ import annotations
-from typing import Optional, Tuple, TYPE_CHECKING
+from abc import ABC, abstractmethod
+import time
+from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
 from src.entities.ghost import Ghost
 
@@ -7,61 +9,104 @@ if TYPE_CHECKING:
     from src.scenes.play import PlayScene
 
 
-class RedGhost(Ghost):
+class GhostIA(Ghost, ABC):
+    KILL_WAIT = 5
+
     def __init__(
         self,
         x: int,
         y: int,
+        color: str,
         size: int,
         direction: str,
         build: bool,
-        cell_size: int,
         cell_x: int,
         cell_y: int,
         speed: int,
     ) -> None:
-        super().__init__(x, y, "red", size, direction, build)
-        self.cell_size: int = cell_size
-        self.spawn_x: int = x
-        self.spawn_y: int = y
-        self.spawn_cell_x: int = cell_x
-        self.spawn_cell_y: int = cell_y
-        self.cell_x: int = cell_x
-        self.cell_y: int = cell_y
+        super().__init__(x, y, color, size, direction, build)
+        self.spawn_position = (x, y)
+        self.spawn_cell = (cell_x, cell_y)
+        self.cell_x = cell_x
+        self.cell_y = cell_y
         self.target_cell: Optional[Tuple[int, int]] = None
-        self.speed: int = speed
+        self.speed = speed
+        self.kill_until = 0.0
 
-    def update(self, scene: PlayScene | None = None) -> None:
+    def update(self, scene: PlayScene) -> None:
+        if self.killed:
+            self.update_killed(scene)
+            return
+
+        modifier = None
+        if scene.super_mode:
+            modifier = "scared"
+            if (
+                scene.super_mode_time is not None
+                and time.time() - scene.super_mode_time >= 8
+                and int((time.time() - scene.super_mode_time) * 4) % 2 == 0
+            ):
+                modifier = "white"
+        self.set_modifier(modifier)
+
         super().update()
         if self.target_cell is None:
-            self.choose_target_cell(scene)
+            if scene.super_mode:
+                self.scared(scene)
+            else:
+                self.choose_target_cell(scene)
         self.move_to_target_cell(scene)
 
-    def choose_target_cell(self, scene: PlayScene | None) -> None:
-        if scene is None or scene.player is None:
+    def kill(self) -> None:
+        self.kill_until = 0.0
+        self.target_cell = None
+        self.set_killed(True)
+
+    def update_killed(self, scene: PlayScene) -> None:
+        super().update()
+
+        if self.rect.topleft == self.spawn_position:
+            if self.kill_until == 0:
+                self.kill_until = time.time() + self.KILL_WAIT
+            elif time.time() >= self.kill_until:
+                self.set_killed(False)
+                self.set_modifier("scared" if scene.super_mode else None)
+            return
+
+        if self.target_cell is None:
+            path = self.find_path(
+                scene.maze,
+                (self.cell_x, self.cell_y),
+                self.spawn_cell,
+            )
+            self.target_cell = path[1] if len(path) > 1 else self.spawn_cell
+
+        self.move_to_target_cell(scene)
+
+    @abstractmethod
+    def choose_target_cell(self, scene: PlayScene) -> None:
+        pass
+
+    def scared(self, scene: PlayScene) -> None:
+        if scene.player is None:
             self.target_cell = None
             return
-        start = (self.cell_x, self.cell_y)
-        target = self.pixel_to_cell(scene, scene.player.rect.center)
-        path = self.find_path(scene.maze, start, target)
 
-        if len(path) > 1:
-            self.target_cell = path[1]
-        else:
-            self.target_cell = None
+        player_cell = self.pixel_to_cell(scene, scene.player.rect.center)
+        neighbors = self.get_neighbors(scene.maze, self.cell_x, self.cell_y)
+        self.target_cell = max(
+            neighbors,
+            key=lambda cell: (
+                (cell[0] - player_cell[0]) ** 2
+                + (cell[1] - player_cell[1]) ** 2
+            ),
+        )
 
-    def move_to_target_cell(self, scene: PlayScene | None) -> None:
-        if scene is None:
-            return
+    def move_to_target_cell(self, scene: PlayScene) -> None:
         if self.target_cell is None:
             return
 
-        target_x, target_y = self.cell_to_pixel(
-            scene,
-            self.target_cell[0],
-            self.target_cell[1],
-            self.size,
-        )
+        target_x, target_y = self.cell_to_pixel(scene, self.target_cell)
 
         if self.rect.x < target_x:
             self.set_direction("right")
@@ -81,13 +126,112 @@ class RedGhost(Ghost):
             self.target_cell = None
 
     def reset_position(self) -> None:
-        self.rect.topleft = (self.spawn_x, self.spawn_y)
-        self.cell_x = self.spawn_cell_x
-        self.cell_y = self.spawn_cell_y
+        self.rect.topleft = self.spawn_position
+        self.cell_x, self.cell_y = self.spawn_cell
         self.target_cell = None
+        self.kill_until = 0.0
+        self.set_modifier(None)
+        self.set_killed(False)
+
+    @staticmethod
+    def pixel_to_cell(
+        scene: PlayScene, position: Tuple[int, int]
+    ) -> Tuple[int, int]:
+        return (
+            (position[0] - scene.offset_x) // scene.cell_size,
+            (position[1] - scene.offset_y) // scene.cell_size,
+        )
+
+    def cell_to_pixel(
+        self, scene: PlayScene, cell: Tuple[int, int]
+    ) -> Tuple[int, int]:
+        return (
+            scene.offset_x
+            + cell[0] * scene.cell_size
+            + scene.cell_size // 2
+            - self.size // 2,
+            scene.offset_y
+            + cell[1] * scene.cell_size
+            + scene.cell_size // 2
+            - self.size // 2,
+        )
+
+    @staticmethod
+    def get_neighbors(
+        maze: List[List[int]], cell_x: int, cell_y: int
+    ) -> List[Tuple[int, int]]:
+        neighbors: List[Tuple[int, int]] = []
+        cell_value = maze[cell_y][cell_x]
+        maze_height = len(maze)
+        maze_width = len(maze[0])
+
+        if cell_value & 1 == 0 and cell_y > 0:
+            neighbors.append((cell_x, cell_y - 1))
+        if cell_value & 2 == 0 and cell_x < maze_width - 1:
+            neighbors.append((cell_x + 1, cell_y))
+        if cell_value & 4 == 0 and cell_y < maze_height - 1:
+            neighbors.append((cell_x, cell_y + 1))
+        if cell_value & 8 == 0 and cell_x > 0:
+            neighbors.append((cell_x - 1, cell_y))
+
+        return neighbors
+
+    @classmethod
+    def find_path(
+        cls,
+        maze: List[List[int]],
+        start: Tuple[int, int],
+        target: Tuple[int, int],
+    ) -> List[Tuple[int, int]]:
+        queue = [start]
+        visited = {start}
+        came_from: Dict[Tuple[int, int], Tuple[int, int]] = {}
+
+        for current in queue:
+            if current == target:
+                path = [current]
+                while current != start:
+                    current = came_from[current]
+                    path.append(current)
+                return path[::-1]
+
+            for neighbor in cls.get_neighbors(maze, *current):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    came_from[neighbor] = current
+                    queue.append(neighbor)
+
+        return []
 
 
-class PinkGhost(RedGhost):
+class GhostRed(GhostIA):
+    def __init__(
+        self,
+        x: int,
+        y: int,
+        size: int,
+        direction: str,
+        build: bool,
+        cell_x: int,
+        cell_y: int,
+        speed: int,
+    ) -> None:
+        super().__init__(
+            x, y, "red", size, direction, build, cell_x, cell_y, speed
+        )
+
+    def choose_target_cell(self, scene: PlayScene) -> None:
+        if scene.player is None:
+            self.target_cell = None
+            return
+
+        start = (self.cell_x, self.cell_y)
+        target = self.pixel_to_cell(scene, scene.player.rect.center)
+        path = self.find_path(scene.maze, start, target)
+        self.target_cell = path[1] if len(path) > 1 else None
+
+
+class GhostPink(GhostIA):
     DIRECTION_OFFSET = {
         1: (0, -1),
         2: (1, 0),
@@ -102,26 +246,19 @@ class PinkGhost(RedGhost):
         size: int,
         direction: str,
         build: bool,
-        cell_size: int,
         cell_x: int,
         cell_y: int,
         speed: int,
     ) -> None:
-        Ghost.__init__(self, x, y, "pink", size, direction, build)
-        self.cell_size: int = cell_size
-        self.spawn_x: int = x
-        self.spawn_y: int = y
-        self.spawn_cell_x: int = cell_x
-        self.spawn_cell_y: int = cell_y
-        self.cell_x: int = cell_x
-        self.cell_y: int = cell_y
-        self.target_cell: Optional[Tuple[int, int]] = None
-        self.speed: int = speed
+        super().__init__(
+            x, y, "pink", size, direction, build, cell_x, cell_y, speed
+        )
 
-    def choose_target_cell(self, scene: PlayScene | None) -> None:
-        if scene is None or scene.player is None:
+    def choose_target_cell(self, scene: PlayScene) -> None:
+        if scene.player is None:
             self.target_cell = None
             return
+
         start = (self.cell_x, self.cell_y)
         player_cell = self.pixel_to_cell(scene, scene.player.rect.center)
         direction = scene.player_direction or scene.player.direction
@@ -138,7 +275,4 @@ class PinkGhost(RedGhost):
         if len(path) <= 1:
             path = self.find_path(scene.maze, start, player_cell)
 
-        if len(path) > 1:
-            self.target_cell = path[1]
-        else:
-            self.target_cell = None
+        self.target_cell = path[1] if len(path) > 1 else None

@@ -3,10 +3,9 @@ import pygame  # pyright: ignore[reportMissingImports]
 import time
 import sys
 
-from src.entities.ia import PinkGhost, RedGhost
-from mazegenerator import MazeGenerator
+from src.entities.ia import GhostIA, GhostPink, GhostRed
+from mazegenerator import MazeGenerator  # type: ignore[import-untyped]
 from src.entities.player import Player
-from src.entities.ghost import Ghost
 from .end_scene import EndScene
 from src.game import Game
 from .base import Scene
@@ -24,7 +23,7 @@ class PlayScene(Scene):
         self.vertical_margin: int = 150  # TODO un pourcentage a la place ?
         self.map_finished: Optional[int] = None
         self.player: Optional[Player] = None
-        self.ghosts: List[Ghost] = []
+        self.ghosts: List[GhostIA] = []
         self.score: int = 0
         self.score_per_pellet: int = self.game.config.points_per_pacgum
         self.score_per_super_pellet: int = (
@@ -144,24 +143,22 @@ class PlayScene(Scene):
         _, _, _, ghost_x, ghost_y = self.nodes[0][0]
         _, _, _, pink_x, pink_y = self.nodes[0][self.maze_width - 1]
         self.ghosts = [
-            RedGhost(
+            GhostRed(
                 ghost_x,
                 ghost_y,
                 self.player_size,
                 "down",
                 self.game.config.build,
-                self.cell_size,
                 0,
                 0,
                 self.speed - 1,
             ),
-            PinkGhost(
+            GhostPink(
                 pink_x,
                 pink_y,
                 self.player_size,
                 "down",
                 self.game.config.build,
-                self.cell_size,
                 self.maze_width - 1,
                 0,
                 self.speed - 1,
@@ -294,14 +291,29 @@ class PlayScene(Scene):
             ghost.update(self)
         self.step()
         self._disable_super_mode()
-        if not self.cheat_invicibility and not self.super_mode:
+        if not self.cheat_invicibility:
             self.check_ghost_collisions()
 
     def check_ghost_collisions(self) -> None:
         if self.player is None:
             return
+        player_hitbox = self.player.rect.inflate(
+            self.player_size // 7,
+            -self.player_size // 7,
+        )
         for ghost in self.ghosts:
-            if ghost.rect.colliderect(self.player.rect):
+            if ghost.killed:
+                continue
+            ghost_hitbox = ghost.rect.inflate(
+                -ghost.size // 7,
+                -ghost.size // 7,
+            )
+            if ghost_hitbox.colliderect(player_hitbox):
+                if self.super_mode:
+                    self.score += self.score_per_ghost
+                    ghost.kill()
+                    continue
+
                 if not self.death_time:
                     self.player.death()
                     self.death_time = time.time()
