@@ -20,7 +20,7 @@ class PlayScene(Scene):
     def __init__(self, game: Game) -> None:
         # MAZE
         super().__init__(game)
-        self.vertical_margin: int = 150  # TODO un pourcentage a la place ?
+        self.vertical_margin: int = 150
         self.map_finished: Optional[int] = None
         self.player: Optional[Player] = None
         self.ghosts: List[GhostIA] = []
@@ -29,10 +29,20 @@ class PlayScene(Scene):
         self.score_per_super_pellet: int = (
             self.game.config.points_per_super_pacgum)
         self.score_per_ghost: int = self.game.config.points_per_ghost
-        self.init_new_maze()
         self.wall_color: Tuple[int, int, int] = (0, 140, 220)
         self.floor_color: Tuple[int, int, int] = (0, 0, 0)
         self.pellet_color: Tuple[int, int, int] = (255, 255, 255)
+
+        self.paused: bool = False
+
+        # TIMER
+        self.timer_max: int = self.game.config.level_max_time
+        self.timer: Optional[float] = None
+        self.timer_activated: bool = False
+        self.timer_paused: bool = False
+        self.timer_pause_elapsed: float = 0.0
+
+        self.init_new_maze()
 
         # PLAYER
         self.cheat_invicibility: bool = False
@@ -51,6 +61,7 @@ class PlayScene(Scene):
             self.map_finished = 0
         else:
             self.map_finished += 1
+            self.timer = time.time()
         if (len(self.game.config.levels) <= 10 and
             self.map_finished == 10) or (
             (len(self.game.config.levels) > 10 and
@@ -183,10 +194,23 @@ class PlayScene(Scene):
                 self.player_next_direction = 4
             elif event.key == pygame.K_LEFT:
                 self.player_next_direction = 8
-            elif event.key == pygame.K_7:  # TODO mettre une legende pour ca
+            elif event.key == pygame.K_7:
                 self.init_new_maze()
-            elif event.key == pygame.K_8:  # TODO mettre une legende pour ca
+            elif event.key == pygame.K_8:
                 self.cheat_invicibility = not self.cheat_invicibility
+            elif event.key == pygame.K_9:
+                if self.timer_paused:
+                    self._resume_timer()
+                else:
+                    self._pause_timer()
+            elif event.key == pygame.K_p:  # TODO y'a un probleme la quand le tout 
+                # est en pause mais que pacman est sous super-gum le temps du 
+                # supergum continue de s'ecouler
+                self.paused = not self.paused
+                if self.paused:
+                    self._pause_timer()
+                else:
+                    self._resume_timer()
 
     def get_values_from_node(self) -> Optional[Tuple[int, int, int, int, int]]:
         if self.player is None:
@@ -283,13 +307,38 @@ class PlayScene(Scene):
             else:
                 self.player_direction = None
 
+    def update_timer(self) -> None:
+        if not self.timer_activated or self.timer is None or self.timer_paused:
+            return
+        elapsed = time.time() - self.timer
+        if elapsed >= self.timer_max:
+            self.timer_activated = False
+            self.timer = None
+            self.timer_paused = False
+            self.timer_pause_elapsed = 0.0
+
+    def _pause_timer(self) -> None:
+        if self.timer_activated and self.timer is not None and not self.timer_paused:
+            self.timer_pause_elapsed = time.time() - self.timer
+            self.timer_paused = True
+
+    def _resume_timer(self) -> None:
+        if self.timer_paused:
+            self.timer = time.time() - self.timer_pause_elapsed
+            self.timer_paused = False
+
     def update(self, dt: float) -> None:
+        if self.paused:
+            return
         if self.player is None:
             return
         self.player.update(dt)
         for ghost in self.ghosts:
             ghost.update(self)
         self.step()
+        if not self.timer_activated:
+            self._check_start_movement_timer()
+        self.update_timer()
         self._disable_super_mode()
         if not self.cheat_invicibility:
             self.check_ghost_collisions()
@@ -382,6 +431,15 @@ class PlayScene(Scene):
         ):
             self.super_mode_time = None
             self.super_mode = False
+
+    def _check_start_movement_timer(self) -> None:
+        if self.player is None:
+            return
+        if self.player_direction is not None and all(
+            getattr(g, "target_cell", None) is not None for g in self.ghosts
+        ):
+            self.timer = time.time()
+            self.timer_activated = True
 
     def _pellet_radius(self, x: int, y: int, cell_size: int) -> int:
         is_corner = (
@@ -483,7 +541,83 @@ class PlayScene(Scene):
         self.draw_hud(screen)
 
     def draw_hud(self, screen: pygame.Surface) -> None:
-        lives_text = self.hud_font.render(
-            f"Lives: {self.lives}", True, (255, 255, 255)
-        )
-        screen.blit(lives_text, (10, self.offset_y))
+        white = (255, 255, 255)
+        y = self.offset_y
+
+        lives_text = self.hud_font.render(f"Lives: {self.lives}", True, white)
+        score_text = self.hud_font.render(f"Score: {self.score}", True, white)
+
+        if self.timer_activated and self.timer is not None:
+            if self.timer_paused:
+                remaining = max(0, int(self.timer_max 
+                                       - self.timer_pause_elapsed))
+                timer_text = self.hud_font.render(
+                    f"Timer: {remaining:02d}s (Paused)",
+                    True,
+                    (255, 200, 0))
+            else:
+                remaining = max(0, 
+                                int(self.timer_max - (time.time() 
+                                                      - self.timer)))
+                timer_text = self.hud_font.render(
+                    f"Timer: {remaining:02d}s", True, white
+                )
+        else:
+            timer_text = self.hud_font.render(
+                    f"Timer: s", True, white
+                )
+
+        shortcut_lines = [
+            "Arrows: move",
+            "7: Skip Level",
+            "8: Invincibility",
+            "9: Pause timer",
+            "Esc: quit",
+        ]
+
+        screen.blit(lives_text, (10, y))
+        screen.blit(score_text, (10, y + 30))
+        screen.blit(timer_text, (10, y + 60))
+
+        shortcut_y = y
+        shortcut_x = max(260, self.game.screen.get_width() - 260)
+        for index, line in enumerate(shortcut_lines):
+            shortcut_text = self.hud_font.render(line, True, white)
+            screen.blit(shortcut_text, (shortcut_x, shortcut_y + index * 28))
+        self.draw_pause_menu(screen)
+
+    def draw_pause_menu(self, screen: pygame.Surface) -> None:
+        if self.paused:
+            overlay_w, overlay_h = 320, 140
+            overlay_x = self.game.screen.get_width() // 2 - overlay_w // 2
+            overlay_y = self.game.screen.get_height() // 2 - overlay_h // 2
+
+            pygame.draw.rect(
+                screen,
+                (0, 0, 0),
+                (overlay_x, overlay_y, overlay_w, overlay_h))
+            pygame.draw.rect(
+                screen,
+                (255, 255, 255),
+                (overlay_x,overlay_y, overlay_w, overlay_h), 2)
+
+            title_font = pygame.font.Font(None, 52)
+            small_font = pygame.font.Font(None, 30)
+
+            title = title_font.render(
+                "PAUSED", True, (255, 200, 0))
+            resume = small_font.render(
+                "Press P to resume", True, (255, 255, 255))
+            quit_text = small_font.render(
+                "Press Escape to quit", True, (255, 255, 255))
+
+            screen.blit(title,
+                        (overlay_x + overlay_w // 2 - title.get_width() // 2,
+                        overlay_y + 20))
+            screen.blit(resume,
+                        (overlay_x + overlay_w // 2 - resume.get_width() // 2,
+                         overlay_y + 75))
+            screen.blit(quit_text,
+                        ((overlay_x + overlay_w // 2 
+                          - quit_text.get_width() // 2),
+                         overlay_y + 105))
