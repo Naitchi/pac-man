@@ -3,7 +3,7 @@ import pygame  # pyright: ignore[reportMissingImports]
 import time
 import sys
 
-from src.entities.ia import GhostIA, GhostPink, GhostRed
+from src.entities.ia import GhostIA, GhostPink, GhostRed, GhostBlue, GhostOrange
 from mazegenerator import MazeGenerator  # type: ignore[import-untyped]
 from src.entities.player import Player
 from .end_scene import EndScene
@@ -27,7 +27,8 @@ class PlayScene(Scene):
         self.score: int = 0
         self.score_per_pellet: int = self.game.config.points_per_pacgum
         self.score_per_super_pellet: int = (
-            self.game.config.points_per_super_pacgum)
+            self.game.config.points_per_super_pacgum
+        )
         self.score_per_ghost: int = self.game.config.points_per_ghost
         self.wall_color: Tuple[int, int, int] = (0, 140, 220)
         self.floor_color: Tuple[int, int, int] = (0, 0, 0)
@@ -62,10 +63,12 @@ class PlayScene(Scene):
         else:
             self.map_finished += 1
             self.timer = time.time()
-        if (len(self.game.config.levels) <= 10 and
-            self.map_finished == 10) or (
-            (len(self.game.config.levels) > 10 and
-             len(self.game.config.levels) == self.map_finished)):
+        if (len(self.game.config.levels) <= 10 and self.map_finished == 10) or (
+            (
+                len(self.game.config.levels) > 10
+                and len(self.game.config.levels) == self.map_finished
+            )
+        ):
             self.game.change_scene(EndScene(self.game, self.score, True))
         self.maze: List[List[int]] = MazeGenerator(
             (
@@ -151,12 +154,18 @@ class PlayScene(Scene):
         )
 
         # GHOSTS
-        _, _, _, ghost_x, ghost_y = self.nodes[0][0]
+        _, _, _, red_x, red_y = self.nodes[0][0]
+        # TODO ca me parait bizarre ici (le width est en deuxieme mais dans
+        # les declaration en bas il est en premier)
         _, _, _, pink_x, pink_y = self.nodes[0][self.maze_width - 1]
+        _, _, _, orange_x, orange_y = self.nodes[self.maze_height - 1][0]
+        _, _, _, blue_x, blue_y = self.nodes[self.maze_height - 1][
+            self.maze_width - 1
+        ]
         self.ghosts = [
             GhostRed(
-                ghost_x,
-                ghost_y,
+                red_x,
+                red_y,
                 self.player_size,
                 "down",
                 self.game.config.build,
@@ -174,6 +183,26 @@ class PlayScene(Scene):
                 0,
                 self.speed - 1,
             ),
+            GhostOrange(
+                orange_x,
+                orange_y,
+                self.player_size,
+                "down",
+                self.game.config.build,
+                0,
+                self.maze_height - 1,
+                self.speed - 1,
+            ),
+            GhostBlue(
+                blue_x,
+                blue_y,
+                self.player_size,
+                "down",
+                self.game.config.build,
+                self.maze_width - 1,
+                self.maze_height - 1,
+                self.speed - 1,
+            ),
         ]
 
     def on_enter(self) -> None:
@@ -181,6 +210,8 @@ class PlayScene(Scene):
 
     def on_exit(self) -> None:
         pass
+
+    # TODO je crois qu'on peut pas manger les fantomes quand on est en sous super gum et cheat invincibilite
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.KEYDOWN:
@@ -203,8 +234,10 @@ class PlayScene(Scene):
                     self._resume_timer()
                 else:
                     self._pause_timer()
-            elif event.key == pygame.K_p:  # TODO y'a un probleme la quand le tout 
-                # est en pause mais que pacman est sous super-gum le temps du 
+            elif (
+                event.key == pygame.K_p
+            ):  # TODO y'a un probleme la quand le tout
+                # est en pause mais que pacman est sous super-gum le temps du
                 # supergum continue de s'ecouler
                 self.paused = not self.paused
                 if self.paused:
@@ -266,19 +299,24 @@ class PlayScene(Scene):
         ):
             if self.player_direction == 1 and not self.player.dying:
                 self.player.rect.y = max(
-                    self.next_node_y, self.player.rect.y - self.speed)
+                    self.next_node_y, self.player.rect.y - self.speed
+                )
             elif self.player_direction == 2:
                 self.player.rect.x = min(
-                    self.next_node_x, self.player.rect.x + self.speed)
+                    self.next_node_x, self.player.rect.x + self.speed
+                )
             elif self.player_direction == 4:
                 self.player.rect.y = min(
-                    self.next_node_y, self.player.rect.y + self.speed)
+                    self.next_node_y, self.player.rect.y + self.speed
+                )
             elif self.player_direction == 8:
                 self.player.rect.x = max(
-                    self.next_node_x, self.player.rect.x - self.speed)
+                    self.next_node_x, self.player.rect.x - self.speed
+                )
         elif self.player.rect.topleft == (
-                self.next_node_x, self.next_node_y) or (
-                not self.player_direction and self.player_next_direction):
+            self.next_node_x,
+            self.next_node_y,
+        ) or (not self.player_direction and self.player_next_direction):
             self.delete_pellet(*self.player.rect.center)
             if self.player_next_direction:
                 self.player_direction = self.player_next_direction
@@ -318,7 +356,11 @@ class PlayScene(Scene):
             self.timer_pause_elapsed = 0.0
 
     def _pause_timer(self) -> None:
-        if self.timer_activated and self.timer is not None and not self.timer_paused:
+        if (
+            self.timer_activated
+            and self.timer is not None
+            and not self.timer_paused
+        ):
             self.timer_pause_elapsed = time.time() - self.timer
             self.timer_paused = True
 
@@ -373,7 +415,8 @@ class PlayScene(Scene):
                     self.lives -= 1
                     if self.lives == 0:
                         self.game.change_scene(
-                            EndScene(self.game, self.score, False))
+                            EndScene(self.game, self.score, False)
+                        )
                         return
                     self.reset_round_positions()
                 return
@@ -549,23 +592,21 @@ class PlayScene(Scene):
 
         if self.timer_activated and self.timer is not None:
             if self.timer_paused:
-                remaining = max(0, int(self.timer_max 
-                                       - self.timer_pause_elapsed))
+                remaining = max(
+                    0, int(self.timer_max - self.timer_pause_elapsed)
+                )
                 timer_text = self.hud_font.render(
-                    f"Timer: {remaining:02d}s (Paused)",
-                    True,
-                    (255, 200, 0))
+                    f"Timer: {remaining:02d}s (Paused)", True, (255, 200, 0)
+                )
             else:
-                remaining = max(0, 
-                                int(self.timer_max - (time.time() 
-                                                      - self.timer)))
+                remaining = max(
+                    0, int(self.timer_max - (time.time() - self.timer))
+                )
                 timer_text = self.hud_font.render(
                     f"Timer: {remaining:02d}s", True, white
                 )
         else:
-            timer_text = self.hud_font.render(
-                    f"Timer: s", True, white
-                )
+            timer_text = self.hud_font.render("Timer: s", True, white)
 
         shortcut_lines = [
             "Arrows: move",
@@ -593,31 +634,44 @@ class PlayScene(Scene):
             overlay_y = self.game.screen.get_height() // 2 - overlay_h // 2
 
             pygame.draw.rect(
-                screen,
-                (0, 0, 0),
-                (overlay_x, overlay_y, overlay_w, overlay_h))
+                screen, (0, 0, 0), (overlay_x, overlay_y, overlay_w, overlay_h)
+            )
             pygame.draw.rect(
                 screen,
                 (255, 255, 255),
-                (overlay_x,overlay_y, overlay_w, overlay_h), 2)
+                (overlay_x, overlay_y, overlay_w, overlay_h),
+                2,
+            )
 
             title_font = pygame.font.Font(None, 52)
             small_font = pygame.font.Font(None, 30)
 
-            title = title_font.render(
-                "PAUSED", True, (255, 200, 0))
+            title = title_font.render("PAUSED", True, (255, 200, 0))
             resume = small_font.render(
-                "Press P to resume", True, (255, 255, 255))
+                "Press P to resume", True, (255, 255, 255)
+            )
             quit_text = small_font.render(
-                "Press Escape to quit", True, (255, 255, 255))
+                "Press Escape to quit", True, (255, 255, 255)
+            )
 
-            screen.blit(title,
-                        (overlay_x + overlay_w // 2 - title.get_width() // 2,
-                        overlay_y + 20))
-            screen.blit(resume,
-                        (overlay_x + overlay_w // 2 - resume.get_width() // 2,
-                         overlay_y + 75))
-            screen.blit(quit_text,
-                        ((overlay_x + overlay_w // 2 
-                          - quit_text.get_width() // 2),
-                         overlay_y + 105))
+            screen.blit(
+                title,
+                (
+                    overlay_x + overlay_w // 2 - title.get_width() // 2,
+                    overlay_y + 20,
+                ),
+            )
+            screen.blit(
+                resume,
+                (
+                    overlay_x + overlay_w // 2 - resume.get_width() // 2,
+                    overlay_y + 75,
+                ),
+            )
+            screen.blit(
+                quit_text,
+                (
+                    (overlay_x + overlay_w // 2 - quit_text.get_width() // 2),
+                    overlay_y + 105,
+                ),
+            )

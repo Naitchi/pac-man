@@ -1,7 +1,8 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
-import time
 from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
+from abc import ABC, abstractmethod
+import random
+import time
 
 from src.entities.ghost import Ghost
 
@@ -327,3 +328,43 @@ class GhostBlue(GhostIA):
     def reset_position(self) -> None:
         super().reset_position()
         self.corner = 0
+
+
+class GhostOrange(GhostIA):
+    def __init__(
+        self,
+        x: int,
+        y: int,
+        size: int,
+        direction: str,
+        build: bool,
+        cell_x: int,
+        cell_y: int,
+        speed: int,
+    ) -> None:
+        super().__init__(
+            x, y, "orange", size, direction, build, cell_x, cell_y, speed
+        )
+
+    def choose_target_cell(self, scene: PlayScene) -> None:
+        maze = scene.maze
+        height = len(maze)
+        width = len(maze[0]) if height > 0 else 0
+
+        accessible = [
+            (cx, cy)
+            for cy in range(height)
+            for cx in range(width)
+            if maze[cy][cx] != 15
+        ]
+
+        if not accessible:
+            self.target_cell = None
+            return
+
+        candidates = [c for c in accessible if c != (self.cell_x, self.cell_y)]
+        pool = candidates if candidates else accessible
+        target = random.choice(pool)
+
+        path = self.find_path(maze, (self.cell_x, self.cell_y), target)
+        self.target_cell = path[1] if len(path) > 1 else None
