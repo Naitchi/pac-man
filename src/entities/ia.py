@@ -232,13 +232,6 @@ class GhostRed(GhostIA):
 
 
 class GhostPink(GhostIA):
-    DIRECTION_OFFSET = {
-        1: (0, -1),
-        2: (1, 0),
-        4: (0, 1),
-        8: (-1, 0),
-    }
-
     def __init__(
         self,
         x: int,
@@ -262,7 +255,17 @@ class GhostPink(GhostIA):
         start = (self.cell_x, self.cell_y)
         player_cell = self.pixel_to_cell(scene, scene.player.rect.center)
         direction = scene.player_direction or scene.player.direction
-        dx, dy = self.DIRECTION_OFFSET.get(direction, (1, 0))
+        dx = 0
+        dy = 0
+        if direction == 1:
+            dy = -1
+        elif direction == 2:
+            dx = 1
+        elif direction == 4:
+            dy = 1
+        elif direction == 8:
+            dx = -1
+
         target = player_cell
         for _ in range(4):
             next_cell = (target[0] + dx, target[1] + dy)
@@ -276,3 +279,51 @@ class GhostPink(GhostIA):
             path = self.find_path(scene.maze, start, player_cell)
 
         self.target_cell = path[1] if len(path) > 1 else None
+
+
+class GhostBlue(GhostIA):
+    def __init__(
+        self,
+        x: int,
+        y: int,
+        size: int,
+        direction: str,
+        build: bool,
+        cell_x: int,
+        cell_y: int,
+        speed: int,
+    ) -> None:
+        super().__init__(
+            x, y, "blue", size, direction, build, cell_x, cell_y, speed
+        )
+        self.corner = 0
+
+    def choose_target_cell(self, scene: PlayScene) -> None:
+        start = (self.cell_x, self.cell_y)
+        right = len(scene.maze[0]) - 1
+        bottom = len(scene.maze) - 1
+
+        if self.corner == 0 and start == (0, 0):
+            self.corner = 1
+        elif self.corner == 1 and start == (right, 0):
+            self.corner = 2
+        elif self.corner == 2 and start == (right, bottom):
+            self.corner = 3
+        elif self.corner == 3 and start == (0, bottom):
+            self.corner = 0
+
+        if self.corner == 0:
+            target = (0, 0)
+        elif self.corner == 1:
+            target = (right, 0)
+        elif self.corner == 2:
+            target = (right, bottom)
+        else:
+            target = (0, bottom)
+
+        path = self.find_path(scene.maze, start, target)
+        self.target_cell = path[1] if len(path) > 1 else None
+
+    def reset_position(self) -> None:
+        super().reset_position()
+        self.corner = 0
