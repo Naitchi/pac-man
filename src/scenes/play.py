@@ -52,6 +52,10 @@ class PlayScene(Scene):
         self.hud_font: pygame.font.Font = pygame.font.Font(None, 36)
         self.super_mode_time: Optional[float] = None
         self.super_mode: bool = False
+        self.super_mode_paused: bool = False
+        self.super_mode_pause_elapsed: float = 0.0
+
+        # TODO faire les docstrings
 
     def init_new_maze(self) -> None:
         # TODO il faudrai rajouter des verifications dans le config pour pas
@@ -234,16 +238,14 @@ class PlayScene(Scene):
                     self._resume_timer()
                 else:
                     self._pause_timer()
-            elif (
-                event.key == pygame.K_p
-            ):  # TODO y'a un probleme la quand le tout
-                # est en pause mais que pacman est sous super-gum le temps du
-                # supergum continue de s'ecouler
+            elif event.key == pygame.K_p:
                 self.paused = not self.paused
                 if self.paused:
                     self._pause_timer()
+                    self._pause_super_mode()
                 else:
                     self._resume_timer()
+                    self._resume_super_mode()
 
     def get_values_from_node(self) -> Optional[Tuple[int, int, int, int, int]]:
         if self.player is None:
@@ -366,6 +368,20 @@ class PlayScene(Scene):
             self.timer = time.time() - self.timer_pause_elapsed
             self.timer_paused = False
 
+    def _pause_super_mode(self) -> None:
+        if (
+            self.super_mode
+            and self.super_mode_time is not None
+            and not self.super_mode_paused
+        ):
+            self.super_mode_pause_elapsed = time.time() - self.super_mode_time
+            self.super_mode_paused = True
+
+    def _resume_super_mode(self) -> None:
+        if self.super_mode_paused:
+            self.super_mode_time = time.time() - self.super_mode_pause_elapsed
+            self.super_mode_paused = False
+
     def update(self, dt: float) -> None:
         if self.paused:
             return
@@ -467,6 +483,7 @@ class PlayScene(Scene):
         if (
             self.super_mode
             and self.super_mode_time is not None
+            and not self.super_mode_paused
             and time.time() - self.super_mode_time >= 10
         ):
             self.super_mode_time = None
@@ -580,6 +597,7 @@ class PlayScene(Scene):
             self.player.draw(screen)
         self.draw_hud(screen)
 
+    # TODO afficher le level
     def draw_hud(self, screen: pygame.Surface) -> None:
         white = (255, 255, 255)
         y = self.offset_y
