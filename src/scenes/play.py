@@ -219,13 +219,13 @@ class PlayScene(Scene):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.game.running = False
-            elif event.key == pygame.K_UP:
+            elif event.key in [pygame.K_UP, pygame.K_w]:
                 self.player_next_direction = 1
-            elif event.key == pygame.K_RIGHT:
+            elif event.key in [pygame.K_RIGHT, pygame.K_d]:
                 self.player_next_direction = 2
-            elif event.key == pygame.K_DOWN:
+            elif event.key in [pygame.K_DOWN, pygame.K_s]:
                 self.player_next_direction = 4
-            elif event.key == pygame.K_LEFT:
+            elif event.key in [pygame.K_LEFT, pygame.K_a]:
                 self.player_next_direction = 8
             elif event.key == pygame.K_7:
                 self.init_new_maze()
