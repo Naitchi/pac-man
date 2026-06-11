@@ -108,7 +108,7 @@ class Ghost:
         self.image = self.sprites[self.current_frame]
         self.rect = self.image.get_rect(center=center)
 
-    def update(self) -> None:
+    def update_animation(self) -> None:
         self.frame_count += 1
 
         if self.frame_count >= self.animation_speed:

@@ -3,8 +3,9 @@ import pygame  # pyright: ignore[reportMissingImports]
 import time
 import sys
 
-from src.entities.ia import GhostIA, GhostPink, GhostRed, GhostBlue, GhostOrange
-from mazegenerator import MazeGenerator  # type: ignore[import-untyped]
+from src.entities.ia import (
+    GhostIA, GhostPink, GhostRed, GhostBlue, GhostOrange)
+from mazegenerator import MazeGenerator
 from src.entities.player import Player
 from .end_scene import EndScene
 from src.game import Game
@@ -63,7 +64,8 @@ class PlayScene(Scene):
         else:
             self.map_finished += 1
             self.timer = time.time()
-        if (len(self.game.config.levels) <= 10 and self.map_finished == 10) or (
+        if (len(self.game.config.levels) <= 10
+            and self.map_finished == 10) or (
             (
                 len(self.game.config.levels) > 10
                 and len(self.game.config.levels) == self.map_finished

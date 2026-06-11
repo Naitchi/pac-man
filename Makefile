@@ -1,4 +1,4 @@
-.PHONY: install run debug build clean lint lint-strict
+.PHONY: install run debug build clean fclean lint lint-strict
 
 CONFIG ?= config.json
 
@@ -17,6 +17,10 @@ build:
 clean:
 	find . -type d -name "__pycache__" -prune -exec rm -rf {} +
 	find . -type d -name ".mypy_cache" -prune -exec rm -rf {} +
+
+fclean:
+	$(MAKE) clean
+	rm -rf dist/ build/ .venv/ Pac-Man.spec
 
 lint:
 	uv run flake8 src/

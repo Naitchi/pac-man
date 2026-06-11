@@ -64,8 +64,8 @@ class EndScene(Scene):
                     self.game.change_scene(MainMenuScene(self.game))
 
     def update(self, dt: float) -> None:
-        self.left_ghost.update()
-        self.right_ghost.update()
+        self.left_ghost.update_animation()
+        self.right_ghost.update_animation()
 
     def draw(self, screen: pygame.Surface) -> None:
         screen.fill((10, 10, 40))
