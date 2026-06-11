@@ -215,8 +215,6 @@ class PlayScene(Scene):
     def on_exit(self) -> None:
         pass
 
-    # TODO je crois qu'on peut pas manger les fantomes quand on est en sous super gum et cheat invincibilite
-
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
@@ -395,8 +393,7 @@ class PlayScene(Scene):
             self._check_start_movement_timer()
         self.update_timer()
         self._disable_super_mode()
-        if not self.cheat_invicibility:
-            self.check_ghost_collisions()
+        self.check_ghost_collisions()
 
     def check_ghost_collisions(self) -> None:
         if self.player is None:
@@ -418,12 +415,12 @@ class PlayScene(Scene):
                     ghost.kill()
                     continue
 
-                if not self.death_time:
+                if not self.death_time and not self.cheat_invicibility:
                     self.player.death()
                     self.death_time = time.time()
                     return
 
-                if time.time() - self.death_time >= 2:
+                if self.death_time and time.time() - self.death_time >= 2:
                     self.death_time = None
                     self.lives -= 1
                     if self.lives == 0:
