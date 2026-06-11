@@ -35,7 +35,12 @@ def write_highscores(filename: str, highscores: HighscoreFile) -> None:
         f.write(highscores.model_dump_json(indent=4) + "\n")
 
 
-def add_entry(filename: str, entry: Highscore) -> HighscoreFile:
+def add_entry(filename: str, entry: Highscore,
+              build: bool = False) -> HighscoreFile:
+
+    if build:
+        filename = "_internal/json/highscores.json"
+
     if not Path(filename).exists():
         raise FileNotFoundError(2, "No such file or directory", filename)
 

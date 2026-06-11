@@ -55,8 +55,8 @@ class EndScene(Scene):
                 if self.username and self.show_info_status == 1:
                     highscore = Highscore(name=self.username, score=self.score)
                     self.game.highscores = add_entry(
-                        self.game.config.highscore_filename, highscore
-                    )
+                        self.game.config.highscore_filename, highscore,
+                        self.game.config.build)
                     self.show_info_status = 0
                     self.show_info = "Score saved! Press Return to restart."
 
