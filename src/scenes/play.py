@@ -3,7 +3,13 @@ import pygame  # pyright: ignore[reportMissingImports]
 import time
 import sys
 
-from src.entities.ia import GhostIA, GhostPink, GhostRed, GhostBlue, GhostOrange
+from src.entities.ia import (
+    GhostIA,
+    GhostPink,
+    GhostRed,
+    GhostBlue,
+    GhostOrange,
+)
 from mazegenerator import MazeGenerator  # type: ignore[import-untyped]
 from src.entities.player import Player
 from .end_scene import EndScene
@@ -67,7 +73,9 @@ class PlayScene(Scene):
         else:
             self.map_finished += 1
             self.timer = time.time()
-        if (len(self.game.config.levels) <= 10 and self.map_finished == 10) or (
+        if (
+            len(self.game.config.levels) <= 10 and self.map_finished == 10
+        ) or (
             (
                 len(self.game.config.levels) > 10
                 and len(self.game.config.levels) == self.map_finished
@@ -594,7 +602,6 @@ class PlayScene(Scene):
             self.player.draw(screen)
         self.draw_hud(screen)
 
-    # TODO afficher le level
     def draw_hud(self, screen: pygame.Surface) -> None:
         white = (255, 255, 255)
         y = self.offset_y
