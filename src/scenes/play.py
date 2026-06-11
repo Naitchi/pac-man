@@ -350,10 +350,7 @@ class PlayScene(Scene):
             return
         elapsed = time.time() - self.timer
         if elapsed >= self.timer_max:
-            self.timer_activated = False
-            self.timer = None
-            self.timer_paused = False
-            self.timer_pause_elapsed = 0.0
+            self.game.change_scene(EndScene(self.game, self.score, False))
 
     def _pause_timer(self) -> None:
         if (
