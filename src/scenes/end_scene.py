@@ -96,9 +96,20 @@ class EndScene(Scene):
         self.left_ghost.draw(screen)
         self.right_ghost.draw(screen)
 
+        if self.won:
+            congrats_text = self.info_font.render(
+                "Congratulations! You won!", True, (255, 255, 255)
+            )
+            screen.blit(
+                congrats_text,
+                congrats_text.get_rect(
+                    center=(
+                        center_x,
+                        260)))
+
         screen.blit(title, title_rect)
-        screen.blit(score, score.get_rect(center=(center_x, 260)))
-        screen.blit(name, name.get_rect(center=(center_x, 340)))
+        screen.blit(score, score.get_rect(center=(center_x, 340)))
+        screen.blit(name, name.get_rect(center=(center_x, 420)))
         screen.blit(
             quit_info,
             quit_info.get_rect(center=(center_x, screen.get_height() - 180)),
