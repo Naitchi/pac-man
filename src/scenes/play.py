@@ -211,7 +211,8 @@ class PlayScene(Scene):
     def on_exit(self) -> None:
         pass
 
-    # TODO je crois qu'on peut pas manger les fantomes quand on est en sous super gum et cheat invincibilite
+    # TODO je crois qu'on peut pas manger les fantomes quand on est en sous
+    # super gum et cheat invincibilite
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.KEYDOWN:
@@ -586,6 +587,8 @@ class PlayScene(Scene):
 
         lives_text = self.hud_font.render(f"Lives: {self.lives}", True, white)
         score_text = self.hud_font.render(f"Score: {self.score}", True, white)
+        level_text = self.hud_font.render(
+            f"Level: {self.map_finished}", True, white)
 
         if self.timer_activated and self.timer is not None:
             if self.timer_paused:
@@ -615,7 +618,8 @@ class PlayScene(Scene):
 
         screen.blit(lives_text, (10, y))
         screen.blit(score_text, (10, y + 30))
-        screen.blit(timer_text, (10, y + 60))
+        screen.blit(level_text, (10, y + 60))
+        screen.blit(timer_text, (10, y + 90))
 
         shortcut_y = y
         shortcut_x = max(260, self.game.screen.get_width() - 260)
