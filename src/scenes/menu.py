@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 class MainMenuScene(Scene):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
-        # TODO voir pour mettre une font custom en mode pixelise
         self.title_font: pygame.font.Font = pygame.font.Font(None, 72)
         self.info_font: pygame.font.Font = pygame.font.Font(None, 32)
         self.leaderboard_title_font: pygame.font.Font = pygame.font.Font(

@@ -4,8 +4,13 @@ import time
 import sys
 
 from src.entities.ia import (
-    GhostIA, GhostPink, GhostRed, GhostBlue, GhostOrange)
-from mazegenerator import MazeGenerator
+    GhostIA,
+    GhostPink,
+    GhostRed,
+    GhostBlue,
+    GhostOrange,
+)
+from mazegenerator import MazeGenerator  # type: ignore[import-untyped]
 from src.entities.player import Player
 from .end_scene import EndScene
 from src.game import Game
@@ -53,6 +58,10 @@ class PlayScene(Scene):
         self.hud_font: pygame.font.Font = pygame.font.Font(None, 36)
         self.super_mode_time: Optional[float] = None
         self.super_mode: bool = False
+        self.super_mode_paused: bool = False
+        self.super_mode_pause_elapsed: float = 0.0
+
+        # TODO faire les docstrings
 
     def init_new_maze(self) -> None:
         # TODO il faudrai rajouter des verifications dans le config pour pas
@@ -213,20 +222,17 @@ class PlayScene(Scene):
     def on_exit(self) -> None:
         pass
 
-    # TODO je crois qu'on peut pas manger les fantomes quand on est en sous
-    # super gum et cheat invincibilite
-
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.game.running = False
-            elif event.key == pygame.K_UP:
+            elif event.key in [pygame.K_UP, pygame.K_w]:
                 self.player_next_direction = 1
-            elif event.key == pygame.K_RIGHT:
+            elif event.key in [pygame.K_RIGHT, pygame.K_d]:
                 self.player_next_direction = 2
-            elif event.key == pygame.K_DOWN:
+            elif event.key in [pygame.K_DOWN, pygame.K_s]:
                 self.player_next_direction = 4
-            elif event.key == pygame.K_LEFT:
+            elif event.key in [pygame.K_LEFT, pygame.K_a]:
                 self.player_next_direction = 8
             elif event.key == pygame.K_7:
                 self.init_new_maze()
@@ -237,16 +243,14 @@ class PlayScene(Scene):
                     self._resume_timer()
                 else:
                     self._pause_timer()
-            elif (
-                event.key == pygame.K_p
-            ):  # TODO y'a un probleme la quand le tout
-                # est en pause mais que pacman est sous super-gum le temps du
-                # supergum continue de s'ecouler
+            elif event.key == pygame.K_p:
                 self.paused = not self.paused
                 if self.paused:
                     self._pause_timer()
+                    self._pause_super_mode()
                 else:
                     self._resume_timer()
+                    self._resume_super_mode()
 
     def get_values_from_node(self) -> Optional[Tuple[int, int, int, int, int]]:
         if self.player is None:
@@ -369,6 +373,20 @@ class PlayScene(Scene):
             self.timer = time.time() - self.timer_pause_elapsed
             self.timer_paused = False
 
+    def _pause_super_mode(self) -> None:
+        if (
+            self.super_mode
+            and self.super_mode_time is not None
+            and not self.super_mode_paused
+        ):
+            self.super_mode_pause_elapsed = time.time() - self.super_mode_time
+            self.super_mode_paused = True
+
+    def _resume_super_mode(self) -> None:
+        if self.super_mode_paused:
+            self.super_mode_time = time.time() - self.super_mode_pause_elapsed
+            self.super_mode_paused = False
+
     def update(self, dt: float) -> None:
         if self.paused:
             return
@@ -382,8 +400,7 @@ class PlayScene(Scene):
             self._check_start_movement_timer()
         self.update_timer()
         self._disable_super_mode()
-        if not self.cheat_invicibility:
-            self.check_ghost_collisions()
+        self.check_ghost_collisions()
 
     def check_ghost_collisions(self) -> None:
         if self.player is None:
@@ -405,12 +422,12 @@ class PlayScene(Scene):
                     ghost.kill()
                     continue
 
-                if not self.death_time:
+                if not self.death_time and not self.cheat_invicibility:
                     self.player.death()
                     self.death_time = time.time()
                     return
 
-                if time.time() - self.death_time >= 2:
+                if self.death_time and time.time() - self.death_time >= 2:
                     self.death_time = None
                     self.lives -= 1
                     if self.lives == 0:
@@ -470,6 +487,7 @@ class PlayScene(Scene):
         if (
             self.super_mode
             and self.super_mode_time is not None
+            and not self.super_mode_paused
             and time.time() - self.super_mode_time >= 10
         ):
             self.super_mode_time = None
