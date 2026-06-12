@@ -467,10 +467,10 @@ class PlayScene(Scene):
                     self.offset_y + y * self.cell_size + self.cell_size // 2,
                 )
                 for (x, y) in [
-                    (0, self.maze_width - 1),
+                    (self.maze_width - 1, 0),
                     (0, 0),
-                    (self.maze_height - 1, self.maze_width - 1),
-                    (self.maze_height - 1, 0),
+                    (self.maze_width - 1, self.maze_height - 1),
+                    (0, self.maze_height - 1),
                 ]
             ]:
                 self.score += self.score_per_super_pellet
