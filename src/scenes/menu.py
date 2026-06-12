@@ -57,6 +57,14 @@ class MainMenuScene(Scene):
         info2 = self.info_font.render(
             "Press Escape to quit", True, (255, 255, 255)
         )
+
+        guide = self.info_font.render(
+            "Use arrow keys to move, collect all pellets to win! don't "
+            "get caught by the ghosts!",
+            True,
+            (255,
+             255,
+             255))
         screen.blit(
             title, title.get_rect(center=(screen.get_width() // 2, 180))
         )
@@ -69,6 +77,14 @@ class MainMenuScene(Scene):
                 center=(screen.get_width() // 2, screen.get_height() - 180)
             ),
         )
+        screen.blit(
+            guide,
+            guide.get_rect(
+                center=(
+                    screen.get_width() //
+                    2,
+                    screen.get_height() -
+                    100)))
         self.draw_leaderboard(screen)
 
     def draw_leaderboard(self, screen: pygame.Surface) -> None:

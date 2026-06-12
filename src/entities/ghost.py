@@ -1,5 +1,6 @@
 import pygame  # pyright: ignore[reportMissingImports]
 from typing import Dict, List
+import sys
 
 
 class Ghost:
@@ -36,21 +37,25 @@ class Ghost:
     def get_sprite_path(self, frame: int) -> str:
         base_path = "_internal/assets" if self.build else "src/entities/assets"
 
-        if self.killed:
-            return (
-                f"{base_path}/kill/{self.direction}/"
-                f"kill_{self.direction}_{frame}.png"
-            )
-        if self.modifier is not None:
-            return (
-                f"{base_path}/modifier/{self.modifier}/"
-                f"modifier_{self.modifier}_{frame}.png"
-            )
+        try:
+            if self.killed:
+                return (
+                    f"{base_path}/kill/{self.direction}/"
+                    f"kill_{self.direction}_{frame}.png"
+                )
+            if self.modifier is not None:
+                return (
+                    f"{base_path}/modifier/{self.modifier}/"
+                    f"modifier_{self.modifier}_{frame}.png"
+                )
 
-        return (
-            f"{base_path}/{self.color}/{self.direction}/"
-            f"{self.color}_{self.direction}_{frame}.png"
-        )
+            return (
+                f"{base_path}/{self.color}/{self.direction}/"
+                f"{self.color}_{self.direction}_{frame}.png"
+            )
+        except Exception:
+            print("Sprite not found", file=sys.stderr)
+            sys.exit(1)
 
     def load_sprites(self) -> List[pygame.Surface]:
         sprites: List[pygame.Surface] = []
@@ -103,7 +108,7 @@ class Ghost:
         self.image = self.sprites[self.current_frame]
         self.rect = self.image.get_rect(center=center)
 
-    def update(self) -> None:
+    def update_animation(self) -> None:
         self.frame_count += 1
 
         if self.frame_count >= self.animation_speed:

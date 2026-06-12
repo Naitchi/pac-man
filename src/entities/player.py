@@ -1,5 +1,6 @@
 import pygame  # pyright: ignore[reportMissingImports]
 from typing import Optional, Tuple, List
+import sys
 
 
 class Player:
@@ -8,12 +9,16 @@ class Player:
     ) -> None:
         self.build: bool = build
         base_path = "_internal/assets" if self.build else "src/entities/assets"
-        self.sprites: List[pygame.Surface] = [
-            pygame.image.load(f"{base_path}/pacman_1.png"),
-            pygame.image.load(f"{base_path}/pacman_2.png"),
-            pygame.image.load(f"{base_path}/pacman_3.png"),
-            pygame.image.load(f"{base_path}/pacman_2.png"),
-        ]
+        try:
+            self.sprites: List[pygame.Surface] = [
+                pygame.image.load(f"{base_path}/pacman_1.png"),
+                pygame.image.load(f"{base_path}/pacman_2.png"),
+                pygame.image.load(f"{base_path}/pacman_3.png"),
+                pygame.image.load(f"{base_path}/pacman_2.png"),
+            ]
+        except Exception:
+            print("Sprite not found", file=sys.stderr)
+            sys.exit(1)
         self.size: Optional[Tuple[int, int]] = None
         if size:
             self.size = (size, size)
@@ -53,19 +58,23 @@ class Player:
     def death(self) -> None:
         self.dying = True
         base_path = "_internal/assets" if self.build else "src/entities/assets"
-        self.dying_sprites: List[pygame.Surface] = [
-            pygame.image.load(f"{base_path}/dying/dying_1.png"),
-            pygame.image.load(f"{base_path}/dying/dying_2.png"),
-            pygame.image.load(f"{base_path}/dying/dying_3.png"),
-            pygame.image.load(f"{base_path}/dying/dying_4.png"),
-            pygame.image.load(f"{base_path}/dying/dying_5.png"),
-            pygame.image.load(f"{base_path}/dying/dying_6.png"),
-            pygame.image.load(f"{base_path}/dying/dying_7.png"),
-            pygame.image.load(f"{base_path}/dying/dying_8.png"),
-            pygame.image.load(f"{base_path}/dying/dying_9.png"),
-            pygame.image.load(f"{base_path}/dying/dying_10.png"),
-            pygame.image.load(f"{base_path}/dying/dying_11.png"),
-        ]
+        try:
+            self.dying_sprites: List[pygame.Surface] = [
+                pygame.image.load(f"{base_path}/dying/dying_1.png"),
+                pygame.image.load(f"{base_path}/dying/dying_2.png"),
+                pygame.image.load(f"{base_path}/dying/dying_3.png"),
+                pygame.image.load(f"{base_path}/dying/dying_4.png"),
+                pygame.image.load(f"{base_path}/dying/dying_5.png"),
+                pygame.image.load(f"{base_path}/dying/dying_6.png"),
+                pygame.image.load(f"{base_path}/dying/dying_7.png"),
+                pygame.image.load(f"{base_path}/dying/dying_8.png"),
+                pygame.image.load(f"{base_path}/dying/dying_9.png"),
+                pygame.image.load(f"{base_path}/dying/dying_10.png"),
+                pygame.image.load(f"{base_path}/dying/dying_11.png"),
+            ]
+        except Exception:
+            print("Sprite not found", file=sys.stderr)
+            sys.exit(1)
         if self.size:
             self.dying_sprites = [
                 (

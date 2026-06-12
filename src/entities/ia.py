@@ -50,7 +50,7 @@ class GhostIA(Ghost, ABC):
                 modifier = "white"
         self.set_modifier(modifier)
 
-        super().update()
+        self.update_animation()
         if self.target_cell is None:
             if scene.super_mode:
                 self.scared(scene)
@@ -64,7 +64,7 @@ class GhostIA(Ghost, ABC):
         self.set_killed(True)
 
     def update_killed(self, scene: PlayScene) -> None:
-        super().update()
+        self.update_animation()
 
         if self.rect.topleft == self.spawn_position:
             if self.kill_until == 0:

@@ -55,8 +55,8 @@ class EndScene(Scene):
                 if self.username and self.show_info_status == 1:
                     highscore = Highscore(name=self.username, score=self.score)
                     self.game.highscores = add_entry(
-                        self.game.config.highscore_filename, highscore
-                    )
+                        self.game.config.highscore_filename, highscore,
+                        self.game.config.build)
                     self.show_info_status = 0
                     self.show_info = "Score saved! Press Return to restart."
 
@@ -64,8 +64,8 @@ class EndScene(Scene):
                     self.game.change_scene(MainMenuScene(self.game))
 
     def update(self, dt: float) -> None:
-        self.left_ghost.update()
-        self.right_ghost.update()
+        self.left_ghost.update_animation()
+        self.right_ghost.update_animation()
 
     def draw(self, screen: pygame.Surface) -> None:
         screen.fill((10, 10, 40))
@@ -96,9 +96,20 @@ class EndScene(Scene):
         self.left_ghost.draw(screen)
         self.right_ghost.draw(screen)
 
+        if self.won:
+            congrats_text = self.info_font.render(
+                "Congratulations! You won!", True, (255, 255, 255)
+            )
+            screen.blit(
+                congrats_text,
+                congrats_text.get_rect(
+                    center=(
+                        center_x,
+                        260)))
+
         screen.blit(title, title_rect)
-        screen.blit(score, score.get_rect(center=(center_x, 260)))
-        screen.blit(name, name.get_rect(center=(center_x, 340)))
+        screen.blit(score, score.get_rect(center=(center_x, 340)))
+        screen.blit(name, name.get_rect(center=(center_x, 420)))
         screen.blit(
             quit_info,
             quit_info.get_rect(center=(center_x, screen.get_height() - 180)),
