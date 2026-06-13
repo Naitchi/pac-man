@@ -378,36 +378,37 @@ directory of the repository.
 
 # General Software Architecture
 
-
-<!-- TODO ca c'est pas bon a refaire-->
 ```text
 src/
 │
-├── game/
-│   ├── game.py
-│   ├── level.py
-│   └── state.py
+├── config/
+│   ├── __init__.py
+│   ├── models.py
+│   └── parser.py
 │
 ├── entities/
-│   ├── player.py
+│   ├── assets/
+│   ├── __init__.py
 │   ├── ghost.py
-│   └── pacgum.py
+│   ├── ia.py
+│   └── player.py
 │
-├── ui/
+├── highscore/
+│   ├── __init__.py
+│   ├── models.py
+│   └── parser.py
+│
+├── scenes/
+│   ├── __init__.py
+│   ├── base.py
+│   ├── end_scene.py
 │   ├── menu.py
-│   ├── hud.py
-│   └── screens.py
+│   └── play.py
 │
-├── config/
-│   └── config_loader.py
-│
-├── score/
-│   └── highscore_manager.py
-│
-├── maze/
-│   └── maze_adapter.py
-│
-└── main.py
+├── __init__.py
+├── build-entry.py
+├── game.py
+└── pac-man.py
 ```
 
 ## Architecture Overview
