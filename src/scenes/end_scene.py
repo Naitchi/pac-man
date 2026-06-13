@@ -1,11 +1,20 @@
-import pygame  # pyright: ignore[reportMissingImports]
+import sys
 
+import pygame
 from src.highscore.parser import add_entry
 from src.highscore.models import Highscore
 from src.scenes.menu import MainMenuScene
 from src.entities.ghost import Ghost
 from src.game import Game
 from .base import Scene
+
+
+def is_valid_username_character(character: str) -> bool:
+    return (
+        len(character) == 1
+        and character.isascii()
+        and (character.isalnum() or character == " ")
+    )
 
 
 class EndScene(Scene):
@@ -44,21 +53,31 @@ class EndScene(Scene):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.game.running = False
-            elif event.key == pygame.K_BACKSPACE:
+            elif (
+                event.key == pygame.K_BACKSPACE
+                and self.show_info_status == 1
+            ):
                 self.username = self.username[:-1]
-            elif len(self.username) < 10 and (
-                event.unicode.isalnum() or event.unicode == " "
+                self.show_info = f"Enter name: {self.username}"
+            elif (
+                self.show_info_status == 1
+                and len(self.username) < 10
+                and is_valid_username_character(event.unicode)
             ):
                 self.username += event.unicode
                 self.show_info = f"Enter name: {self.username}"
             elif event.key == pygame.K_RETURN:
                 if self.username and self.show_info_status == 1:
-                    highscore = Highscore(name=self.username, score=self.score)
-                    self.game.highscores = add_entry(
-                        self.game.config.highscore_filename, highscore,
-                        self.game.config.build)
-                    self.show_info_status = 0
-                    self.show_info = "Score saved! Press Return to restart."
+                    try:
+                        highscore = Highscore(
+                            name=self.username, score=self.score)
+                        self.game.highscores = add_entry(
+                            self.game.config.highscore_filename, highscore,
+                            self.game.config.build)
+                        self.show_info_status = 0
+                        self.show_info = "Score saved! Press Return to restart"
+                    except Exception as e:
+                        print(f"Error saving score: {e}", file=sys.stderr)
 
                 elif self.show_info_status == 0:
                     self.game.change_scene(MainMenuScene(self.game))

@@ -1,4 +1,5 @@
 import json
+import sys
 from typing import Any
 from pydantic import ValidationError
 
@@ -21,7 +22,8 @@ def warn_missing_values(data: dict[str, Any]) -> None:
     if missing:
         print(
             f"Warning: missing config keys: {', '.join(missing)}; "
-            "using defaults."
+            "using defaults.",
+            file=sys.stderr,
         )
 
     levels = data.get("levels")
@@ -34,16 +36,30 @@ def warn_missing_values(data: dict[str, Any]) -> None:
         if missing:
             print(
                 f"Warning: level {index + 1} is missing "
-                f"{', '.join(missing)}; using defaults."
+                f"{', '.join(missing)}; using defaults.",
+                file=sys.stderr,
             )
 
 
 def parse_config(filename: str) -> GameConfig:
     with open(filename, "r") as f:
-        data = json.loads(remove_comments(f.read()))
+        content = remove_comments(f.read())
+
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError as error:
+        print(
+            f"Warning: invalid JSON config ({error}); "
+            "using all default values.",
+            file=sys.stderr,
+        )
+        return GameConfig()
 
     if not isinstance(data, dict):
-        print("Warning: invalid config; using all default values.")
+        print(
+            "Warning: invalid config; using all default values.",
+            file=sys.stderr,
+        )
         return GameConfig()
 
     warn_missing_values(data)
@@ -54,6 +70,9 @@ def parse_config(filename: str) -> GameConfig:
         try:
             setattr(config, key, value)
         except ValidationError:
-            print(f"Warning: config key '{key}' is invalid; using default.")
+            print(
+                f"Warning: config key '{key}' is invalid; using default.",
+                file=sys.stderr,
+            )
 
     return config

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-import pygame  # pyright: ignore[reportMissingImports]
+import pygame
 import random
 
 from ..entities.player import Player

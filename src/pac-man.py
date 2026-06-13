@@ -9,13 +9,13 @@ def main(filename: str) -> None:
     try:
         cfg = parse_config(filename)
     except Exception as e:
-        print(f"Error parsing config: {e}")
-        return
+        print(f"Error parsing config: {e}", file=sys.stderr)
+        sys.exit(1)
     try:
         highscores = parse_highscores(cfg.highscore_filename)
     except Exception as e:
-        print(f"Error parsing highscores: {e}")
-        return
+        print(f"Error parsing highscores: {e}", file=sys.stderr)
+        sys.exit(1)
 
     game = Game(cfg, highscores)
     game.run()
@@ -23,7 +23,7 @@ def main(filename: str) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) != 2 or not sys.argv[1].endswith(".json"):
-        print("Usage: make run <config_file.json>")
+        print("Usage: python3 pac-man.py <config_file.json>", file=sys.stderr)
         sys.exit(1)
 
     main(sys.argv[1])

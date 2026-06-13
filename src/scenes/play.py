@@ -1,5 +1,5 @@
 from typing import Literal, Optional, List, Tuple, Set
-import pygame  # pyright: ignore[reportMissingImports]
+import pygame
 import time
 import sys
 
@@ -10,7 +10,7 @@ from src.entities.ia import (
     GhostBlue,
     GhostOrange,
 )
-from mazegenerator import MazeGenerator  # type: ignore[import-untyped]
+from mazegenerator import MazeGenerator
 from src.entities.player import Player
 from .end_scene import EndScene
 from src.game import Game
@@ -81,27 +81,31 @@ class PlayScene(Scene):
             )
         ):
             self.game.change_scene(EndScene(self.game, self.score, True))
-        self.maze: List[List[int]] = MazeGenerator(
-            (
+        try:
+            self.maze: List[List[int]] = MazeGenerator(
                 (
-                    self.game.config.levels[
-                        self.map_finished % len(self.game.config.levels)
-                    ].width
+                    (
+                        self.game.config.levels[
+                            self.map_finished % len(self.game.config.levels)
+                        ].width
+                    ),
+                    (
+                        self.game.config.levels[
+                            self.map_finished % len(self.game.config.levels)
+                        ].height
+                    ),
                 ),
-                (
-                    self.game.config.levels[
-                        self.map_finished % len(self.game.config.levels)
-                    ].height
-                ),
-            ),
-            perfect=False,
-            seed=(42 if self.map_finished == 0 else -1),
-        ).maze
+                perfect=False,
+                seed=(self.game.config.seed if self.map_finished == 0 else -1),
+            ).maze
+        except Exception as e:
+            print(f"Error generating maze: {e}", file=sys.stderr)
+            sys.exit(1)
         self.maze_height: int = len(self.maze)
         self.maze_width: int = len(self.maze[0]) if self.maze_height else 0
         if self.maze_height == 0 or self.maze_width == 0:
-            print("Error: no maze to show")
-            sys.exit()
+            print("Error: no maze to show", file=sys.stderr)
+            sys.exit(1)
         self.available_height: int = max(
             1, self.game.screen.get_height() - (self.vertical_margin * 2)
         )
@@ -532,8 +536,11 @@ class PlayScene(Scene):
                 if value != 15:
                     return (x_px, y_px)
                 else:
-                    print("Error: was not eable to spawn in pac-man")
-                    sys.exit()
+                    print(
+                        "Error: was not able to spawn Pac-Man",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
 
     def draw(self, screen: pygame.Surface) -> None:
         screen.fill(self.floor_color)

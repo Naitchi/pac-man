@@ -1,5 +1,4 @@
-import pygame  # pyright: ignore[reportMissingImports]
-
+import pygame
 from src.highscore.models import HighscoreFile
 from src.scenes.menu import MainMenuScene
 from src.config.models import GameConfig

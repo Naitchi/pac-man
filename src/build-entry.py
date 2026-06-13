@@ -11,22 +11,22 @@ def main() -> None:
     try:
         os.chdir(Path(sys.executable).parent)
     except OSError as e:
-        print(f"Error opening game directory: {e}")
-        return
+        print(f"Error opening game directory: {e}", file=sys.stderr)
+        sys.exit(1)
 
     try:
         cfg = parse_config("_internal/json/config.json")
     except Exception as e:
-        print(f"Error parsing config: {e}")
-        return
+        print(f"Error parsing config: {e}", file=sys.stderr)
+        sys.exit(1)
 
     cfg.build = True
 
     try:
         highscores = parse_highscores("_internal/json/highscores.json")
     except Exception as e:
-        print(f"Error parsing highscores: {e}")
-        return
+        print(f"Error parsing highscores: {e}", file=sys.stderr)
+        sys.exit(1)
 
     game = Game(cfg, highscores)
     game.run()

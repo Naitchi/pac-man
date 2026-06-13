@@ -1,4 +1,4 @@
-import pygame  # pyright: ignore[reportMissingImports]
+import pygame
 from typing import Dict, List
 import sys
 

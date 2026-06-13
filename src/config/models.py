@@ -26,7 +26,6 @@ class GameConfig(BaseModel):
         min_length=1,
     )
     lives: int = Field(default=3, gt=0, strict=True)
-    pacgum: int = Field(default=42, gt=0, strict=True)
     points_per_pacgum: int = Field(default=10, gt=0, strict=True)
     points_per_super_pacgum: int = Field(default=50, gt=0, strict=True)
     points_per_ghost: int = Field(default=200, gt=0, strict=True)

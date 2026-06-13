@@ -1,5 +1,5 @@
 from __future__ import annotations
-import pygame  # pyright: ignore[reportMissingImports]
+import pygame
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
