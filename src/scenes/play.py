@@ -14,6 +14,7 @@ from src.entities.ia import (
 )
 from mazegenerator import MazeGenerator
 from src.entities.player import Player
+from src.scenes.menu import MainMenuScene
 from .end_scene import EndScene
 from src.game import Game
 from .base import Scene
@@ -270,6 +271,8 @@ class PlayScene(Scene):
                 else:
                     self._resume_timer()
                     self._resume_super_mode()
+            elif self.paused and event.key == pygame.K_RETURN:
+                self.game.change_scene(MainMenuScene(self.game))
 
     def get_values_from_node(self) -> Optional[Tuple[int, int, int, int, int]]:
         """Find maze metadata for the player's current target node.
@@ -743,7 +746,7 @@ class PlayScene(Scene):
             screen: Destination display surface.
         """
         if self.paused:
-            overlay_w, overlay_h = 320, 140
+            overlay_w, overlay_h = 520, 180
             overlay_x = self.game.screen.get_width() // 2 - overlay_w // 2
             overlay_y = self.game.screen.get_height() // 2 - overlay_h // 2
 
@@ -764,6 +767,9 @@ class PlayScene(Scene):
             resume = small_font.render(
                 "Press P to resume", True, (255, 255, 255)
             )
+            main_menu_text = small_font.render(
+                "Press Enter to return to main menu", True, (255, 255, 255)
+            )
             quit_text = small_font.render(
                 "Press Escape to quit", True, (255, 255, 255)
             )
@@ -783,9 +789,17 @@ class PlayScene(Scene):
                 ),
             )
             screen.blit(
+                main_menu_text,
+                (
+                    (overlay_x + overlay_w // 2 -
+                     main_menu_text.get_width() // 2),
+                    overlay_y + 105,
+                ),
+            )
+            screen.blit(
                 quit_text,
                 (
                     (overlay_x + overlay_w // 2 - quit_text.get_width() // 2),
-                    overlay_y + 105,
+                    overlay_y + 130,
                 ),
             )
