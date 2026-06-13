@@ -1,3 +1,5 @@
+"""Main menu scene and highscore display."""
+
 from __future__ import annotations
 from typing import TYPE_CHECKING
 import pygame
@@ -11,7 +13,14 @@ if TYPE_CHECKING:
 
 
 class MainMenuScene(Scene):
+    """Display the title screen, controls, and current leaderboard."""
+
     def __init__(self, game: Game) -> None:
+        """Initialize menu fonts and the decorative Pac-Man sprite.
+
+        Args:
+            game: Active game controller.
+        """
         super().__init__(game)
         self.title_font: pygame.font.Font = pygame.font.Font(None, 72)
         self.info_font: pygame.font.Font = pygame.font.Font(None, 32)
@@ -28,6 +37,11 @@ class MainMenuScene(Scene):
         )
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        """Start the game or close the application.
+
+        Args:
+            event: Event received from the Pygame event queue.
+        """
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:
                 from .play import PlayScene
@@ -37,6 +51,11 @@ class MainMenuScene(Scene):
                 self.game.running = False
 
     def update(self, dt: float) -> None:
+        """Animate the decorative Pac-Man across the menu.
+
+        Args:
+            dt: Elapsed time since the previous frame in seconds.
+        """
         self.player_x += 16
         self.player.rect.x = self.player_x
         if self.game.screen.get_width() < self.player_x:
@@ -48,6 +67,11 @@ class MainMenuScene(Scene):
         self.player.update(dt)
 
     def draw(self, screen: pygame.Surface) -> None:
+        """Render the menu and leaderboard.
+
+        Args:
+            screen: Destination display surface.
+        """
         screen.fill((10, 10, 40))
         self.player.draw(screen)
         title = self.title_font.render("PAC-MAN", True, (255, 200, 0))
@@ -88,6 +112,11 @@ class MainMenuScene(Scene):
         self.draw_leaderboard(screen)
 
     def draw_leaderboard(self, screen: pygame.Surface) -> None:
+        """Render up to ten highscores.
+
+        Args:
+            screen: Destination display surface.
+        """
         x = 60
         y = 150
         title = self.leaderboard_title_font.render(

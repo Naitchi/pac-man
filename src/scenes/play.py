@@ -1,3 +1,5 @@
+"""Main gameplay scene for maze generation, movement, and scoring."""
+
 from typing import Literal, Optional, List, Tuple, Set
 import pygame
 import time
@@ -18,12 +20,19 @@ from .base import Scene
 
 
 class PlayScene(Scene):
-    WALL_TOP = 1
-    WALL_RIGHT = 2
-    WALL_BOTTOM = 4
-    WALL_LEFT = 8
+    """Manage one complete game across all generated levels."""
+
+    WALL_TOP: int = 1
+    WALL_RIGHT: int = 2
+    WALL_BOTTOM: int = 4
+    WALL_LEFT: int = 8
 
     def __init__(self, game: Game) -> None:
+        """Initialize gameplay state and generate the first level.
+
+        Args:
+            game: Active game controller containing configuration and display.
+        """
         # MAZE
         super().__init__(game)
         self.vertical_margin: int = 150
@@ -62,6 +71,12 @@ class PlayScene(Scene):
         self.super_mode_pause_elapsed: float = 0.0
 
     def init_new_maze(self) -> None:
+        """Advance level progression and initialize a generated maze.
+
+        The first level uses the configured fixed seed. Later levels request
+        random generation from the external maze package. Player, pellet, and
+        ghost state is recreated for the new maze.
+        """
         # MAZE
         if self.map_finished is None:
             self.map_finished = 0
@@ -214,12 +229,19 @@ class PlayScene(Scene):
         ]
 
     def on_enter(self) -> None:
+        """Run optional setup when gameplay becomes active."""
         pass
 
     def on_exit(self) -> None:
+        """Run optional cleanup when gameplay is replaced."""
         pass
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        """Handle movement, pause, exit, and cheat controls.
+
+        Args:
+            event: Event received from the Pygame event queue.
+        """
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.game.running = False
@@ -250,6 +272,12 @@ class PlayScene(Scene):
                     self._resume_super_mode()
 
     def get_values_from_node(self) -> Optional[Tuple[int, int, int, int, int]]:
+        """Find maze metadata for the player's current target node.
+
+        Returns:
+            Node center, wall bitmask, and player-aligned pixel coordinates,
+            or ``None`` when no matching node is found.
+        """
         if self.player is None:
             return None
         px_x = self.player.rect.x
@@ -292,6 +320,7 @@ class PlayScene(Scene):
         return None
 
     def step(self) -> None:
+        """Move the player toward the next node and process turns."""
         if self.player is None:
             return
         if self.player.dying:
@@ -350,6 +379,7 @@ class PlayScene(Scene):
                 self.player_direction = None
 
     def update_timer(self) -> None:
+        """End the game when the active level timer reaches zero."""
         if not self.timer_activated or self.timer is None or self.timer_paused:
             return
         elapsed = time.time() - self.timer
@@ -357,6 +387,7 @@ class PlayScene(Scene):
             self.game.change_scene(EndScene(self.game, self.score, False))
 
     def _pause_timer(self) -> None:
+        """Store elapsed level time and pause the timer."""
         if (
             self.timer_activated
             and self.timer is not None
@@ -366,11 +397,13 @@ class PlayScene(Scene):
             self.timer_paused = True
 
     def _resume_timer(self) -> None:
+        """Resume the level timer from its stored elapsed value."""
         if self.timer_paused:
             self.timer = time.time() - self.timer_pause_elapsed
             self.timer_paused = False
 
     def _pause_super_mode(self) -> None:
+        """Store elapsed power-up time and pause super mode."""
         if (
             self.super_mode
             and self.super_mode_time is not None
@@ -380,11 +413,17 @@ class PlayScene(Scene):
             self.super_mode_paused = True
 
     def _resume_super_mode(self) -> None:
+        """Resume super mode from its stored elapsed value."""
         if self.super_mode_paused:
             self.super_mode_time = time.time() - self.super_mode_pause_elapsed
             self.super_mode_paused = False
 
     def update(self, dt: float) -> None:
+        """Advance entities, movement, timers, and collisions.
+
+        Args:
+            dt: Elapsed time since the previous frame in seconds.
+        """
         if self.paused:
             return
         if self.player is None:
@@ -400,6 +439,11 @@ class PlayScene(Scene):
         self.check_ghost_collisions()
 
     def check_ghost_collisions(self) -> None:
+        """Resolve collisions between the player and active ghosts.
+
+        Vulnerable ghosts are eaten for points. Otherwise, a collision starts
+        the player death sequence unless invincibility is enabled.
+        """
         if self.player is None:
             return
         player_hitbox = self.player.rect.inflate(
@@ -436,11 +480,13 @@ class PlayScene(Scene):
                 return
 
     def reset_round_positions(self) -> None:
+        """Return the player and every ghost to their spawn positions."""
         self.reset_player_position()
         for ghost in self.ghosts:
             ghost.reset_position()
 
     def reset_player_position(self) -> None:
+        """Respawn the player at the maze center and clear movement state."""
         if self.player is None:
             return
         self.player.rect.topleft = (
@@ -453,9 +499,24 @@ class PlayScene(Scene):
         self.next_node_x, self.next_node_y = (None, None)
 
     def _has_wall(self, cell_value: int, wall_bit: int) -> bool:
+        """Check whether a maze cell contains a specific wall.
+
+        Args:
+            cell_value: Bitmask describing the cell walls.
+            wall_bit: Wall bit to test.
+
+        Returns:
+            ``True`` when the requested wall is present.
+        """
         return (cell_value & wall_bit) != 0
 
     def delete_pellet(self, x: int, y: int) -> None:
+        """Consume a pellet and apply its score or power-up effect.
+
+        Args:
+            x: Horizontal pellet position in pixels.
+            y: Vertical pellet position in pixels.
+        """
         try:
             self.pellets.remove((x, y))
             if (x, y) in [
@@ -481,6 +542,7 @@ class PlayScene(Scene):
             pass
 
     def _disable_super_mode(self) -> None:
+        """Disable super mode after its ten-second duration."""
         if (
             self.super_mode
             and self.super_mode_time is not None
@@ -491,6 +553,7 @@ class PlayScene(Scene):
             self.super_mode = False
 
     def _check_start_movement_timer(self) -> None:
+        """Start the level timer after all entities begin moving."""
         if self.player is None:
             return
         if self.player_direction is not None and all(
@@ -500,6 +563,16 @@ class PlayScene(Scene):
             self.timer_activated = True
 
     def _pellet_radius(self, x: int, y: int, cell_size: int) -> int:
+        """Calculate the display radius for a pellet.
+
+        Args:
+            x: Pellet maze column.
+            y: Pellet maze row.
+            cell_size: Maze cell size in pixels.
+
+        Returns:
+            Radius in pixels, enlarged for corner super-pacgums.
+        """
         is_corner = (
             (x, y) == (0, 0)
             or (x, y) == (0, len(self.maze) - 1)
@@ -511,6 +584,11 @@ class PlayScene(Scene):
         return max(2, cell_size // 10)
 
     def get_middle_node(self) -> Tuple[int, int]:
+        """Find a walkable spawn node near the center of the maze.
+
+        Returns:
+            Pixel coordinates of the selected node center.
+        """
         x_px, y_px, value, _, _ = self.nodes[len(self.nodes) // 2][
             len(self.nodes[0]) // 2
         ]
@@ -536,6 +614,11 @@ class PlayScene(Scene):
                     sys.exit(1)
 
     def draw(self, screen: pygame.Surface) -> None:
+        """Render the maze, pellets, entities, and HUD.
+
+        Args:
+            screen: Destination display surface.
+        """
         screen.fill(self.floor_color)
         wall_thickness = max(2, self.cell_size // 8)
 
@@ -602,8 +685,13 @@ class PlayScene(Scene):
         self.draw_hud(screen)
 
     def draw_hud(self, screen: pygame.Surface) -> None:
-        white = (255, 255, 255)
-        y = self.offset_y
+        """Render score, lives, level, timer, and control hints.
+
+        Args:
+            screen: Destination display surface.
+        """
+        white: Tuple[int, int, int] = (255, 255, 255)
+        y: int = self.offset_y
 
         lives_text = self.hud_font.render(f"Lives: {self.lives}", True, white)
         score_text = self.hud_font.render(f"Score: {self.score}", True, white)
@@ -628,7 +716,7 @@ class PlayScene(Scene):
         else:
             timer_text = self.hud_font.render("Timer: s", True, white)
 
-        shortcut_lines = [
+        shortcut_lines: List[str] = [
             "Arrows: move",
             "7: Skip Level",
             "8: Invincibility",
@@ -649,6 +737,11 @@ class PlayScene(Scene):
         self.draw_pause_menu(screen)
 
     def draw_pause_menu(self, screen: pygame.Surface) -> None:
+        """Render the pause overlay when gameplay is paused.
+
+        Args:
+            screen: Destination display surface.
+        """
         if self.paused:
             overlay_w, overlay_h = 320, 140
             overlay_x = self.game.screen.get_width() // 2 - overlay_w // 2

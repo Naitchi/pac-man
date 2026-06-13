@@ -1,3 +1,5 @@
+"""Pathfinding and movement strategies for autonomous ghosts."""
+
 from __future__ import annotations
 from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 from abc import ABC, abstractmethod
@@ -11,6 +13,8 @@ if TYPE_CHECKING:
 
 
 class GhostIA(Ghost, ABC):
+    """Base class for ghosts that navigate maze cells autonomously."""
+
     KILL_WAIT = 5
 
     def __init__(
@@ -25,16 +29,34 @@ class GhostIA(Ghost, ABC):
         cell_y: int,
         speed: int,
     ) -> None:
+        """Initialize navigation state for a ghost.
+
+        Args:
+            x: Initial horizontal position in pixels.
+            y: Initial vertical position in pixels.
+            color: Ghost color used to select sprite assets.
+            size: Square sprite size in pixels.
+            direction: Initial visual direction.
+            build: Whether resources are loaded from a packaged build.
+            cell_x: Initial maze column.
+            cell_y: Initial maze row.
+            speed: Movement speed in pixels per frame.
+        """
         super().__init__(x, y, color, size, direction, build)
-        self.spawn_position = (x, y)
-        self.spawn_cell = (cell_x, cell_y)
-        self.cell_x = cell_x
-        self.cell_y = cell_y
+        self.spawn_position: Tuple[int, int] = (x, y)
+        self.spawn_cell: Tuple[int, int] = (cell_x, cell_y)
+        self.cell_x: int = cell_x
+        self.cell_y: int = cell_y
         self.target_cell: Optional[Tuple[int, int]] = None
-        self.speed = speed
-        self.kill_until = 0.0
+        self.speed: int = speed
+        self.kill_until: float = 0.0
 
     def update(self, scene: PlayScene) -> None:
+        """Update visual state, choose a target, and move one frame.
+
+        Args:
+            scene: Active play scene containing maze and player state.
+        """
         if self.killed:
             self.update_killed(scene)
             return
@@ -59,11 +81,17 @@ class GhostIA(Ghost, ABC):
         self.move_to_target_cell(scene)
 
     def kill(self) -> None:
+        """Mark the ghost as eaten and start its return to spawn."""
         self.kill_until = 0.0
         self.target_cell = None
         self.set_killed(True)
 
     def update_killed(self, scene: PlayScene) -> None:
+        """Move an eaten ghost home and respawn it after a delay.
+
+        Args:
+            scene: Active play scene containing maze state.
+        """
         self.update_animation()
 
         if self.rect.topleft == self.spawn_position:
@@ -86,9 +114,19 @@ class GhostIA(Ghost, ABC):
 
     @abstractmethod
     def choose_target_cell(self, scene: PlayScene) -> None:
+        """Choose the next adjacent maze cell.
+
+        Args:
+            scene: Active play scene containing maze and player state.
+        """
         pass
 
     def scared(self, scene: PlayScene) -> None:
+        """Choose the adjacent cell farthest from the player.
+
+        Args:
+            scene: Active play scene containing maze and player state.
+        """
         if scene.player is None:
             self.target_cell = None
             return
@@ -104,6 +142,11 @@ class GhostIA(Ghost, ABC):
         )
 
     def move_to_target_cell(self, scene: PlayScene) -> None:
+        """Move toward the currently selected target cell.
+
+        Args:
+            scene: Active play scene used for coordinate conversion.
+        """
         if self.target_cell is None:
             return
 
@@ -127,6 +170,7 @@ class GhostIA(Ghost, ABC):
             self.target_cell = None
 
     def reset_position(self) -> None:
+        """Return the ghost to its spawn position and normal state."""
         self.rect.topleft = self.spawn_position
         self.cell_x, self.cell_y = self.spawn_cell
         self.target_cell = None
@@ -138,6 +182,15 @@ class GhostIA(Ghost, ABC):
     def pixel_to_cell(
         scene: PlayScene, position: Tuple[int, int]
     ) -> Tuple[int, int]:
+        """Convert a pixel position to maze coordinates.
+
+        Args:
+            scene: Active play scene defining maze offsets and cell size.
+            position: Pixel coordinate to convert.
+
+        Returns:
+            Maze column and row containing the position.
+        """
         return (
             (position[0] - scene.offset_x) // scene.cell_size,
             (position[1] - scene.offset_y) // scene.cell_size,
@@ -146,6 +199,15 @@ class GhostIA(Ghost, ABC):
     def cell_to_pixel(
         self, scene: PlayScene, cell: Tuple[int, int]
     ) -> Tuple[int, int]:
+        """Convert a maze cell to the ghost's top-left pixel position.
+
+        Args:
+            scene: Active play scene defining maze offsets and cell size.
+            cell: Maze column and row to convert.
+
+        Returns:
+            Top-left pixel position for the ghost sprite.
+        """
         return (
             scene.offset_x
             + cell[0] * scene.cell_size
@@ -161,6 +223,16 @@ class GhostIA(Ghost, ABC):
     def get_neighbors(
         maze: List[List[int]], cell_x: int, cell_y: int
     ) -> List[Tuple[int, int]]:
+        """Return cells reachable from a maze position.
+
+        Args:
+            maze: Maze wall bitmasks indexed by row and column.
+            cell_x: Current maze column.
+            cell_y: Current maze row.
+
+        Returns:
+            Adjacent cells without a separating wall.
+        """
         neighbors: List[Tuple[int, int]] = []
         cell_value = maze[cell_y][cell_x]
         maze_height = len(maze)
@@ -184,6 +256,17 @@ class GhostIA(Ghost, ABC):
         start: Tuple[int, int],
         target: Tuple[int, int],
     ) -> List[Tuple[int, int]]:
+        """Find the shortest path between two maze cells.
+
+        Args:
+            maze: Maze wall bitmasks indexed by row and column.
+            start: Starting maze cell.
+            target: Destination maze cell.
+
+        Returns:
+            Ordered cells from start to target, or an empty list when no path
+            exists.
+        """
         queue = [start]
         visited = {start}
         came_from: Dict[Tuple[int, int], Tuple[int, int]] = {}
@@ -206,6 +289,8 @@ class GhostIA(Ghost, ABC):
 
 
 class GhostRed(GhostIA):
+    """Ghost that directly follows the shortest path to the player."""
+
     def __init__(
         self,
         x: int,
@@ -217,11 +302,28 @@ class GhostRed(GhostIA):
         cell_y: int,
         speed: int,
     ) -> None:
+        """Initialize the red chasing ghost.
+
+        Args:
+            x: Initial horizontal position in pixels.
+            y: Initial vertical position in pixels.
+            size: Square sprite size in pixels.
+            direction: Initial visual direction.
+            build: Whether resources are loaded from a packaged build.
+            cell_x: Initial maze column.
+            cell_y: Initial maze row.
+            speed: Movement speed in pixels per frame.
+        """
         super().__init__(
             x, y, "red", size, direction, build, cell_x, cell_y, speed
         )
 
     def choose_target_cell(self, scene: PlayScene) -> None:
+        """Choose the first step on the shortest path to the player.
+
+        Args:
+            scene: Active play scene containing maze and player state.
+        """
         if scene.player is None:
             self.target_cell = None
             return
@@ -233,6 +335,8 @@ class GhostRed(GhostIA):
 
 
 class GhostPink(GhostIA):
+    """Ghost that targets cells ahead of the player's direction."""
+
     def __init__(
         self,
         x: int,
@@ -244,11 +348,28 @@ class GhostPink(GhostIA):
         cell_y: int,
         speed: int,
     ) -> None:
+        """Initialize the pink ambush ghost.
+
+        Args:
+            x: Initial horizontal position in pixels.
+            y: Initial vertical position in pixels.
+            size: Square sprite size in pixels.
+            direction: Initial visual direction.
+            build: Whether resources are loaded from a packaged build.
+            cell_x: Initial maze column.
+            cell_y: Initial maze row.
+            speed: Movement speed in pixels per frame.
+        """
         super().__init__(
             x, y, "pink", size, direction, build, cell_x, cell_y, speed
         )
 
     def choose_target_cell(self, scene: PlayScene) -> None:
+        """Choose a path toward a reachable cell ahead of the player.
+
+        Args:
+            scene: Active play scene containing maze and player state.
+        """
         if scene.player is None:
             self.target_cell = None
             return
@@ -283,6 +404,8 @@ class GhostPink(GhostIA):
 
 
 class GhostBlue(GhostIA):
+    """Ghost that patrols the four corners of the maze."""
+
     def __init__(
         self,
         x: int,
@@ -294,12 +417,29 @@ class GhostBlue(GhostIA):
         cell_y: int,
         speed: int,
     ) -> None:
+        """Initialize the blue corner-patrol ghost.
+
+        Args:
+            x: Initial horizontal position in pixels.
+            y: Initial vertical position in pixels.
+            size: Square sprite size in pixels.
+            direction: Initial visual direction.
+            build: Whether resources are loaded from a packaged build.
+            cell_x: Initial maze column.
+            cell_y: Initial maze row.
+            speed: Movement speed in pixels per frame.
+        """
         super().__init__(
             x, y, "blue", size, direction, build, cell_x, cell_y, speed
         )
-        self.corner = 0
+        self.corner: int = 0
 
     def choose_target_cell(self, scene: PlayScene) -> None:
+        """Choose the next step toward the current patrol corner.
+
+        Args:
+            scene: Active play scene containing maze state.
+        """
         start = (self.cell_x, self.cell_y)
         right = len(scene.maze[0]) - 1
         bottom = len(scene.maze) - 1
@@ -326,11 +466,14 @@ class GhostBlue(GhostIA):
         self.target_cell = path[1] if len(path) > 1 else None
 
     def reset_position(self) -> None:
+        """Reset the ghost and restart its corner patrol."""
         super().reset_position()
         self.corner = 0
 
 
 class GhostOrange(GhostIA):
+    """Ghost that selects random reachable destinations."""
+
     def __init__(
         self,
         x: int,
@@ -342,11 +485,28 @@ class GhostOrange(GhostIA):
         cell_y: int,
         speed: int,
     ) -> None:
+        """Initialize the orange roaming ghost.
+
+        Args:
+            x: Initial horizontal position in pixels.
+            y: Initial vertical position in pixels.
+            size: Square sprite size in pixels.
+            direction: Initial visual direction.
+            build: Whether resources are loaded from a packaged build.
+            cell_x: Initial maze column.
+            cell_y: Initial maze row.
+            speed: Movement speed in pixels per frame.
+        """
         super().__init__(
             x, y, "orange", size, direction, build, cell_x, cell_y, speed
         )
 
     def choose_target_cell(self, scene: PlayScene) -> None:
+        """Choose the first step toward a random accessible cell.
+
+        Args:
+            scene: Active play scene containing maze state.
+        """
         maze = scene.maze
         height = len(maze)
         width = len(maze[0]) if height > 0 else 0

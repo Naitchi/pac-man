@@ -1,3 +1,5 @@
+"""Application controller and main Pygame loop."""
+
 import pygame
 from src.highscore.models import HighscoreFile
 from src.scenes.menu import MainMenuScene
@@ -6,7 +8,15 @@ from src.scenes.base import Scene
 
 
 class Game:
+    """Coordinate configuration, scenes, rendering, and application state."""
+
     def __init__(self, config: GameConfig, highscores: HighscoreFile) -> None:
+        """Initialize Pygame and create the main menu.
+
+        Args:
+            config: Validated game configuration.
+            highscores: Highscores loaded at application startup.
+        """
         pygame.init()
         self.config: GameConfig = config
         self.highscores: HighscoreFile = highscores
@@ -19,6 +29,11 @@ class Game:
         self.scene: Scene = MainMenuScene(self)
 
     def change_scene(self, new_scene: Scene) -> None:
+        """Replace the active scene and invoke lifecycle hooks.
+
+        Args:
+            new_scene: Scene that should receive subsequent events and frames.
+        """
         if hasattr(self, "scene") and self.scene:
             try:
                 self.scene.on_exit()
@@ -31,6 +46,7 @@ class Game:
             pass
 
     def run(self) -> None:
+        """Run the main event, update, and rendering loop."""
         while self.running:
             dt = self.clock.tick(60) / 1000.0
             for event in pygame.event.get():

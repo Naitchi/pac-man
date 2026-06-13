@@ -1,9 +1,13 @@
+"""Base animated ghost entity."""
+
 import pygame
 from typing import Dict, List
 import sys
 
 
 class Ghost:
+    """Represent a ghost sprite and its visual state."""
+
     DIRECTIONS: Dict[int, str] = {
         1: "up",
         2: "right",
@@ -20,12 +24,22 @@ class Ghost:
         direction: str,
         build: bool,
     ) -> None:
+        """Load ghost sprites and create the collision rectangle.
+
+        Args:
+            x: Initial horizontal position in pixels.
+            y: Initial vertical position in pixels.
+            color: Ghost color used to select sprite assets.
+            size: Square sprite size in pixels.
+            direction: Initial visual direction.
+            build: Whether resources are loaded from a packaged build.
+        """
         self.color: str = color
         self.direction: str = direction
         self.size: int = size
         self.build: bool = build
         self.modifier: str | None = None
-        self.killed = False
+        self.killed: bool = False
         self.sprites: List[pygame.Surface] = self.load_sprites()
         self.current_frame: int = 0
         self.frame_count: int = 0
@@ -35,7 +49,17 @@ class Ghost:
         self.rect: pygame.Rect = self.image.get_rect(x=x, y=y)
 
     def get_sprite_path(self, frame: int) -> str:
-        base_path = "_internal/assets" if self.build else "src/entities/assets"
+        """Build the path for one sprite frame.
+
+        Args:
+            frame: One-based animation frame number.
+
+        Returns:
+            Path to the sprite matching the ghost's current state.
+        """
+        base_path: str = (
+            "_internal/assets" if self.build else "src/entities/assets"
+        )
 
         try:
             if self.killed:
@@ -58,6 +82,14 @@ class Ghost:
             sys.exit(1)
 
     def load_sprites(self) -> List[pygame.Surface]:
+        """Load and resize the two frames for the current visual state.
+
+        Returns:
+            Loaded Pygame surfaces for the current animation.
+
+        Raises:
+            pygame.error: If a sprite file cannot be loaded.
+        """
         sprites: List[pygame.Surface] = []
 
         for frame in range(1, 3):
@@ -69,6 +101,11 @@ class Ghost:
         return sprites
 
     def set_direction(self, direction: int | str) -> None:
+        """Change the visual direction while preserving the sprite center.
+
+        Args:
+            direction: Direction bit or direction name.
+        """
         if isinstance(direction, int):
             direction_val = self.DIRECTIONS.get(direction, None)
             direction_str = (
@@ -87,6 +124,11 @@ class Ghost:
         self.rect = self.image.get_rect(center=center)
 
     def set_modifier(self, modifier: str | None) -> None:
+        """Apply or clear a vulnerable-state sprite modifier.
+
+        Args:
+            modifier: Modifier asset name, or ``None`` for normal sprites.
+        """
         if modifier == self.modifier:
             return
 
@@ -97,6 +139,11 @@ class Ghost:
         self.rect = self.image.get_rect(center=center)
 
     def set_killed(self, killed: bool) -> None:
+        """Switch between normal and eaten ghost sprites.
+
+        Args:
+            killed: Whether the ghost has been eaten.
+        """
         if killed == self.killed:
             return
 
@@ -109,6 +156,7 @@ class Ghost:
         self.rect = self.image.get_rect(center=center)
 
     def update_animation(self) -> None:
+        """Advance the ghost animation at its configured frame rate."""
         self.frame_count += 1
 
         if self.frame_count >= self.animation_speed:
@@ -117,4 +165,9 @@ class Ghost:
             self.image = self.sprites[self.current_frame]
 
     def draw(self, screen: pygame.Surface) -> None:
+        """Render the ghost sprite.
+
+        Args:
+            screen: Destination display surface.
+        """
         screen.blit(self.image, self.rect)

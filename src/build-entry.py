@@ -1,3 +1,5 @@
+"""PyInstaller entry point for the packaged game."""
+
 from pathlib import Path
 import sys
 import os
@@ -8,6 +10,7 @@ from src.game import Game
 
 
 def main() -> None:
+    """Load packaged resources and start the game."""
     try:
         os.chdir(Path(sys.executable).parent)
     except OSError as e:

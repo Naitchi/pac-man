@@ -1,3 +1,5 @@
+"""Command-line entry point for the Pac-Man game."""
+
 import sys
 
 from src.highscore.parser import parse_highscores
@@ -6,6 +8,11 @@ from src.game import Game
 
 
 def main(filename: str) -> None:
+    """Load the configuration and start the game.
+
+    Args:
+        filename: Path to the JSON configuration file.
+    """
     try:
         cfg = parse_config(filename)
     except Exception as e:

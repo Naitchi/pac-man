@@ -1,3 +1,5 @@
+"""Victory and game-over scene with highscore entry."""
+
 import sys
 
 import pygame
@@ -10,6 +12,14 @@ from .base import Scene
 
 
 def is_valid_username_character(character: str) -> bool:
+    """Check whether a character is valid in a player name.
+
+    Args:
+        character: Character entered through a keyboard event.
+
+    Returns:
+        ``True`` for one ASCII letter, digit, or space.
+    """
     return (
         len(character) == 1
         and character.isascii()
@@ -18,8 +28,16 @@ def is_valid_username_character(character: str) -> bool:
 
 
 class EndScene(Scene):
+    """Display the final result and collect the player's name."""
 
     def __init__(self, game: Game, score: int, won: bool = False) -> None:
+        """Initialize the final score screen.
+
+        Args:
+            game: Active game controller.
+            score: Final score achieved by the player.
+            won: Whether the player completed every level.
+        """
         super().__init__(game)
         self.score: int = score
         self.won: bool = won
@@ -50,6 +68,11 @@ class EndScene(Scene):
             self.right_ghost.set_modifier("scared")
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        """Process name entry, score saving, and exit actions.
+
+        Args:
+            event: Event received from the Pygame event queue.
+        """
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.game.running = False
@@ -83,10 +106,20 @@ class EndScene(Scene):
                     self.game.change_scene(MainMenuScene(self.game))
 
     def update(self, dt: float) -> None:
+        """Advance decorative ghost animations.
+
+        Args:
+            dt: Elapsed time since the previous frame in seconds.
+        """
         self.left_ghost.update_animation()
         self.right_ghost.update_animation()
 
     def draw(self, screen: pygame.Surface) -> None:
+        """Render the result, score, and name prompt.
+
+        Args:
+            screen: Destination display surface.
+        """
         screen.fill((10, 10, 40))
 
         title_text = "VICTORY" if self.won else "GAME OVER"

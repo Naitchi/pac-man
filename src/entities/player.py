@@ -1,14 +1,28 @@
+"""Animated Pac-Man player entity."""
+
 import pygame
 from typing import Optional, Tuple, List
 import sys
 
 
 class Player:
+    """Represent and animate the player sprite."""
+
     def __init__(
         self, x: int, y: int, build: bool, size: Optional[int] = None
     ) -> None:
+        """Load player sprites and create the collision rectangle.
+
+        Args:
+            x: Initial horizontal position in pixels.
+            y: Initial vertical position in pixels.
+            build: Whether resources are loaded from a packaged build.
+            size: Optional square sprite size in pixels.
+        """
         self.build: bool = build
-        base_path = "_internal/assets" if self.build else "src/entities/assets"
+        base_path: str = (
+            "_internal/assets" if self.build else "src/entities/assets"
+        )
         try:
             self.sprites: List[pygame.Surface] = [
                 pygame.image.load(f"{base_path}/pacman_1.png"),
@@ -36,6 +50,14 @@ class Player:
         self.rect: pygame.Rect = self.image.get_rect(x=x, y=y)
 
     def _apply_direction(self, image: pygame.Surface) -> pygame.Surface:
+        """Rotate or flip a sprite to match the current direction.
+
+        Args:
+            image: Source sprite for the current animation frame.
+
+        Returns:
+            The transformed sprite.
+        """
         center = self.rect.center if hasattr(self, "rect") else None
         if self.direction == 1:
             image = pygame.transform.rotate(image, 90)
@@ -52,12 +74,20 @@ class Player:
         return image
 
     def set_direction(self, direction: int) -> None:
+        """Set the movement direction and refresh the displayed sprite.
+
+        Args:
+            direction: Maze direction bit used by the movement system.
+        """
         self.direction = direction
         self.image = self._apply_direction(self.sprites[self.current_frame])
 
     def death(self) -> None:
+        """Start the player death animation."""
         self.dying = True
-        base_path = "_internal/assets" if self.build else "src/entities/assets"
+        base_path: str = (
+            "_internal/assets" if self.build else "src/entities/assets"
+        )
         try:
             self.dying_sprites: List[pygame.Surface] = [
                 pygame.image.load(f"{base_path}/dying/dying_1.png"),
@@ -87,6 +117,12 @@ class Player:
         self.image = self.dying_sprites[0]
 
     def update(self, dt: Optional[float] = None) -> None:
+        """Advance the movement or death animation.
+
+        Args:
+            dt: Elapsed frame time in seconds. When omitted, Pygame ticks are
+                used to calculate the elapsed time.
+        """
         if dt is None:
             now = pygame.time.get_ticks()
             if self._last_ticks is None:
@@ -122,4 +158,9 @@ class Player:
                 self.sprites[self.current_frame])
 
     def draw(self, screen: pygame.Surface) -> None:
+        """Render the player sprite.
+
+        Args:
+            screen: Destination display surface.
+        """
         screen.blit(self.image, self.rect)

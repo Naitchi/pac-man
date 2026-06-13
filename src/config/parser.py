@@ -1,3 +1,5 @@
+"""Load and validate JSON game configuration files."""
+
 import json
 import sys
 from typing import Any
@@ -7,8 +9,16 @@ from .models import GameConfig
 
 
 def remove_comments(f: str) -> str:
+    """Remove full-line hash comments from JSON content.
+
+    Args:
+        f: Raw configuration file content.
+
+    Returns:
+        Configuration content without lines beginning with ``#``.
+    """
     lines = f.splitlines()
-    result = []
+    result: list[str] = []
 
     for line in lines:
         if not line.strip().startswith("#"):
@@ -18,6 +28,11 @@ def remove_comments(f: str) -> str:
 
 
 def warn_missing_values(data: dict[str, Any]) -> None:
+    """Report missing configuration fields that will use defaults.
+
+    Args:
+        data: Parsed configuration dictionary.
+    """
     missing = sorted(set(GameConfig.model_fields) - set(data) - {"build"})
     if missing:
         print(
@@ -42,6 +57,22 @@ def warn_missing_values(data: dict[str, Any]) -> None:
 
 
 def parse_config(filename: str) -> GameConfig:
+    """Read a configuration file and apply validated defaults.
+
+    Invalid JSON or invalid individual values are replaced with safe
+    defaults. File access errors are left to the caller so the command-line
+    entry point can report a startup failure.
+
+    Args:
+        filename: Path to the JSON configuration file.
+
+    Returns:
+        A validated game configuration.
+
+    Raises:
+        OSError: If the configuration file cannot be opened.
+        UnicodeError: If the file cannot be decoded.
+    """
     with open(filename, "r") as f:
         content = remove_comments(f.read())
 
