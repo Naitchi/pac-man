@@ -43,7 +43,10 @@ This project was developed as part of the 42 curriculum with a strong focus on:
 - Pygame
 - A-Maze-ing maze generator package
 
-<!-- TODO @gcabecas faut recheck l'installation -->
+## Download
+
+https://gcstxt.itch.io/42-pacman
+
 
 ## Installation
 
@@ -61,6 +64,12 @@ uv sync
 
 ```bash
 make run
+```
+
+or 
+
+```bash
+make run CONFIG="your_config.json"
 ```
 
 or
@@ -93,20 +102,25 @@ make lint-strict
 make clean
 ```
 
+## Full clean
+```bash
+make fclean
+```
+
 ---
 
 # Controls
 
 | Action | Key |
 |----------|----------|
-| Move Up | ↑ |
-| Move Down | ↓ |
-| Move Left | ← |
-| Move Right | → |
+| Move Up | ↑ / W |
+| Move Down | ↓ / S |
+| Move Left | ← / A |
+| Move Right | → / D |
 | Pause | P |
 | Quit | ESC |
 | Skip Level | 7 |
-| Invicibility Cheat | 8 |
+| Invincibility Cheat | 8 |
 | Pause Timer | 9 |
 
 ---
@@ -238,6 +252,10 @@ MazeGenerator(
 )
 ```
 
+The first level always uses the configured seed value to ensure reproducibility.
+
+Subsequent levels are generated using random seeds to provide a different maze layout each time.
+
 ## Design Choice
 
 Using the external package allows:
@@ -258,7 +276,7 @@ Clear every pacgum from the maze while avoiding ghosts.
 
 ## Scoring
 
-(Point are define in the config file this is an exemple)
+(Points are defined in the configuration file. The values below are examples.)
 
 | Event | Points |
 |---------|---------|
@@ -371,11 +389,6 @@ Design goals:
 
 ---
 
-## Project Management
-
-Project management documents can be found in the `project_management/`
-directory of the repository.
-
 # General Software Architecture
 
 ```text
@@ -427,6 +440,18 @@ Contains game objects:
 ### Config
 
 Loads and validates configuration files.
+
+### Relationships
+
+pac-man.py
+    ↓
+Game
+    ↓
+Scene System
+    ↓
+Player / Ghosts
+    ↓
+Config & Highscore Managers
 
 ---
 
