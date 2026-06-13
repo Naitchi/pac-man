@@ -61,12 +61,7 @@ class PlayScene(Scene):
         self.super_mode_paused: bool = False
         self.super_mode_pause_elapsed: float = 0.0
 
-        # TODO faire les docstrings
-
     def init_new_maze(self) -> None:
-        # TODO il faudrai rajouter des verifications dans le config pour pas
-        # qu'ils puissent mettre des labyrinth trop petit pour que tout le
-        # monde spawn dedans. genre 5x5 minimum et 25x25 max?
         # MAZE
         if self.map_finished is None:
             self.map_finished = 0
@@ -170,8 +165,6 @@ class PlayScene(Scene):
 
         # GHOSTS
         _, _, _, red_x, red_y = self.nodes[0][0]
-        # TODO ca me parait bizarre ici (le width est en deuxieme mais dans
-        # les declaration en bas il est en premier)
         _, _, _, pink_x, pink_y = self.nodes[0][self.maze_width - 1]
         _, _, _, orange_x, orange_y = self.nodes[self.maze_height - 1][0]
         _, _, _, blue_x, blue_y = self.nodes[self.maze_height - 1][
