@@ -136,7 +136,6 @@ Example:
     ]
 }
 ```
-<!-- TODO faire un test d'un non-carre pour etre sur -->
 ## Supported Keys
 
 | Key | Default |
@@ -321,7 +320,7 @@ Displayed during gameplay:
 
 - Current score
 - Lives remaining
-- Current level <!-- TODO ca c'est pas fait encore -->
+- Current level
 - Remaining time
 
 ## Pause Menu
@@ -371,6 +370,11 @@ Design goals:
 - Clear separation of concerns
 
 ---
+
+## Project Management
+
+Project management documents can be found in the `project_management/`
+directory of the repository.
 
 # General Software Architecture
 
