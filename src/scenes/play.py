@@ -23,6 +23,7 @@ from .base import Scene
 class PlayScene(Scene):
     """Manage one complete game across all generated levels."""
 
+    DEATH_DURATION: float = 2.0
     WALL_TOP: int = 1
     WALL_RIGHT: int = 2
     WALL_BOTTOM: int = 4
@@ -59,17 +60,19 @@ class PlayScene(Scene):
         self.timer_paused: bool = False
         self.timer_pause_elapsed: float = 0.0
 
-        self.init_new_maze()
-
-        # PLAYER
-        self.cheat_invicibility: bool = False
-        self.death_time: Optional[float] = None
-        self.lives: int = self.game.config.lives
-        self.hud_font: pygame.font.Font = pygame.font.Font(None, 36)
+        # SUPER MODE
         self.super_mode_time: Optional[float] = None
         self.super_mode: bool = False
         self.super_mode_paused: bool = False
         self.super_mode_pause_elapsed: float = 0.0
+
+        self.init_new_maze()
+
+        # PLAYER
+        self.cheat_invicibility: bool = False
+        self.death_elapsed: float = 0.0
+        self.lives: int = self.game.config.lives
+        self.hud_font: pygame.font.Font = pygame.font.Font(None, 36)
 
     def init_new_maze(self) -> None:
         """Advance level progression and initialize a generated maze.
@@ -78,6 +81,8 @@ class PlayScene(Scene):
         random generation from the external maze package. Player, pellet, and
         ghost state is recreated for the new maze.
         """
+        self._reset_super_mode()
+
         # MAZE
         if self.map_finished is None:
             self.map_finished = 0
@@ -421,6 +426,13 @@ class PlayScene(Scene):
             self.super_mode_time = time.time() - self.super_mode_pause_elapsed
             self.super_mode_paused = False
 
+    def _reset_super_mode(self) -> None:
+        """Clear the active and paused super mode state."""
+        self.super_mode = False
+        self.super_mode_time = None
+        self.super_mode_paused = False
+        self.super_mode_pause_elapsed = 0.0
+
     def update(self, dt: float) -> None:
         """Advance entities, movement, timers, and collisions.
 
@@ -432,6 +444,9 @@ class PlayScene(Scene):
         if self.player is None:
             return
         self.player.update(dt)
+        if self.player.dying:
+            self._update_player_death(dt)
+            return
         for ghost in self.ghosts:
             ghost.update(self)
         self.step()
@@ -466,21 +481,33 @@ class PlayScene(Scene):
                     ghost.kill()
                     continue
 
-                if not self.death_time and not self.cheat_invicibility:
+                if not self.cheat_invicibility:
                     self.player.death()
-                    self.death_time = time.time()
-                    return
-
-                if self.death_time and time.time() - self.death_time >= 2:
-                    self.death_time = None
-                    self.lives -= 1
-                    if self.lives == 0:
-                        self.game.change_scene(
-                            EndScene(self.game, self.score, False)
-                        )
-                        return
-                    self.reset_round_positions()
+                    self.death_elapsed = 0.0
                 return
+
+    def _update_player_death(self, dt: float) -> None:
+        """Advance the frozen death sequence and respawn the player.
+
+        Args:
+            dt: Elapsed time since the previous frame in seconds.
+        """
+        self.death_elapsed += dt
+        if self.timer_activated and self.timer is not None:
+            self.timer += dt
+        if self.super_mode and self.super_mode_time is not None:
+            self.super_mode_time += dt
+
+        if self.death_elapsed < self.DEATH_DURATION:
+            return
+
+        self.death_elapsed = 0.0
+        self.lives -= 1
+        self._reset_super_mode()
+        if self.lives <= 0:
+            self.game.change_scene(EndScene(self.game, self.score, False))
+            return
+        self.reset_round_positions()
 
     def reset_round_positions(self) -> None:
         """Return the player and every ghost to their spawn positions."""
@@ -498,7 +525,7 @@ class PlayScene(Scene):
         )
         self.player_direction = None
         self.player_next_direction = None
-        self.player.dying = False
+        self.player.revive()
         self.next_node_x, self.next_node_y = (None, None)
 
     def _has_wall(self, cell_value: int, wall_bit: int) -> bool:
@@ -552,8 +579,7 @@ class PlayScene(Scene):
             and not self.super_mode_paused
             and time.time() - self.super_mode_time >= 10
         ):
-            self.super_mode_time = None
-            self.super_mode = False
+            self._reset_super_mode()
 
     def _check_start_movement_timer(self) -> None:
         """Start the level timer after all entities begin moving."""

@@ -125,7 +125,6 @@ def add_entry(filename: str, entry: Highscore,
     Raises:
         OSError: If the highscore file cannot be created or written.
     """
-
     if build:
         filename = "_internal/json/highscores.json"
 

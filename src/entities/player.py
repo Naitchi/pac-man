@@ -85,6 +85,8 @@ class Player:
     def death(self) -> None:
         """Start the player death animation."""
         self.dying = True
+        self.current_frame = 0
+        self.animation_timer = 0.0
         base_path: str = (
             "_internal/assets" if self.build else "src/entities/assets"
         )
@@ -115,6 +117,13 @@ class Player:
                 for img in self.dying_sprites
             ]
         self.image = self.dying_sprites[0]
+
+    def revive(self) -> None:
+        """Restore the normal animation after a player death."""
+        self.dying = False
+        self.current_frame = 0
+        self.animation_timer = 0.0
+        self.image = self._apply_direction(self.sprites[0])
 
     def update(self, dt: Optional[float] = None) -> None:
         """Advance the movement or death animation.
@@ -147,7 +156,10 @@ class Player:
         if self.animation_timer >= interval and self.dying:
             steps = int(self.animation_timer // interval)
             self.animation_timer -= steps * interval
-            self.current_frame = self.current_frame + steps
+            self.current_frame = min(
+                self.current_frame + steps,
+                len(self.dying_sprites) - 1,
+            )
             self.image = self.dying_sprites[self.current_frame]
         elif self.animation_timer >= interval:
             steps = int(self.animation_timer // interval)
